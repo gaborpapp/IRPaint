@@ -1,0 +1,12 @@
+env = Environment()
+
+env['APP_TARGET'] = 'IRPaint'
+env['APP_SOURCES'] = ['IRPaint.cpp', 'BlobTracker.cpp', 'PParams.cpp']
+env['ASSETS'] = []
+env['DEBUG'] = 1
+
+# OpenCV
+env = SConscript('../../../blocks/Cinder-OpenCV/scons/SConscript',
+	exports = 'env')
+
+SConscript('../../../scons/SConscript', exports = 'env')
