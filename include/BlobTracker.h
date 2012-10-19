@@ -20,7 +20,8 @@ class BlobTracker
 {
 	public:
 		BlobTracker() :
-			mSavingVideo( false ) {}
+			mSavingVideo( false ),
+			mIdCounter( 1 ) {}
 
 		void setup();
 		void update();
@@ -29,9 +30,14 @@ class BlobTracker
 
 		struct Blob
 		{
-			ci::Rectf bbox;
-			ci::Vec2f centroid;
+			Blob() : mId( -1 ) {}
+
+			int32_t mId;
+			ci::Rectf mBbox;
+			ci::Vec2f mCentroid;
+			ci::Vec2f mLastCentroid;
 		};
+		typedef std::shared_ptr< Blob > BlobRef;
 
 		size_t getBlobNum() const;
 		ci::Rectf getBlobBoundingRect( size_t i ) const;
@@ -81,7 +87,11 @@ class BlobTracker
 		float mMinArea;
 		float mMaxArea;
 
-		std::vector< Blob > mBlobs;
+		std::vector< BlobRef > mBlobs;
+		void trackBlobs( std::vector< BlobRef > newBlobs );
+		int32_t findClosestBlobKnn( const std::vector< BlobRef > &newBlobs,
+				BlobRef track, int k, double thresh );
+		int32_t mIdCounter;
 
 		// normalizes blob coordinates from camera 2d coords to [0, 1]
 		ci::RectMapping mNormMapping;
