@@ -52,10 +52,6 @@ void BlobTracker::setup()
 		mCaptures.push_back( Capture() );
 	}
 
-	// normalized camera coordinates mapping
-	mNormMapping = RectMapping( Rectf( 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT ),
-								Rectf( 0, 0, 1, 1 ) );
-
 	mParams = params::PInterfaceGl( "Tracker", Vec2i( 350, 550 ) );
 	mParams.addPersistentSizeAndPosition();
 	setupGui();
@@ -105,25 +101,13 @@ void BlobTracker::update()
 	static int lastCapture = -1;
 	static int lastSource = -1;
 
-	// stop and start capture devices
-	if ( lastCapture != mCurrentCapture )
-	{
-		if ( ( lastCapture >= 0 ) && ( mCaptures[ lastCapture ] ) )
-			mCaptures[ lastCapture ].stop();
-
-		if ( mCaptures[ mCurrentCapture ] )
-			mCaptures[ mCurrentCapture ].start();
-
-		mCapture = mCaptures[ mCurrentCapture ];
-		lastCapture = mCurrentCapture;
-	}
-
 	// change gui buttons if switched between capture and playback
 	if ( lastSource != mSource )
 	{
-		app::console() << "source: " << mSource << endl;
 		setupGui();
 		lastSource = mSource;
+
+
 	}
 
 	// select source
@@ -132,11 +116,42 @@ void BlobTracker::update()
 
 	if ( mSource == SOURCE_CAMERA )
 	{
+		// normalized camera coordinates mapping
+		mNormMapping = RectMapping( Rectf( 0, 0, CAPTURE_WIDTH, CAPTURE_HEIGHT ),
+									Rectf( 0, 0, 1, 1 ) );
+
+		// stop and start capture devices
+		if ( lastCapture != mCurrentCapture )
+		{
+			if ( ( lastCapture >= 0 ) && ( mCaptures[ lastCapture ] ) )
+				mCaptures[ lastCapture ].stop();
+
+			if ( mCaptures[ mCurrentCapture ] )
+				mCaptures[ mCurrentCapture ].start();
+
+			mCapture = mCaptures[ mCurrentCapture ];
+			lastCapture = mCurrentCapture;
+		}
+
 		processFrame = mCapture && mCapture.checkNewFrame();
 		inputSurface = mCapture.getSurface();
 	}
 	else // SOURCE_RECORDING
+	if ( mMovie )
 	{
+		// stop capture device
+		if ( lastCapture != -1 )
+		{
+			mCaptures[ lastCapture ].stop();
+			lastCapture = -1;
+		}
+
+		// normalized movie coordinates mapping
+		mNormMapping = RectMapping( Rectf( 0, 0, mMovie.getWidth(), mMovie.getHeight() ),
+									Rectf( 0, 0, 1, 1 ) );
+
+		processFrame = mMovie.checkNewFrame();
+		inputSurface = mMovie.getSurface();
 	}
 
 	// process source image
