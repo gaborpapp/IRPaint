@@ -88,7 +88,7 @@ void BlobTracker::setupGui()
 
 	mParams.addPersistentParam( "Flip", &mFlip, true );
 
-	mParams.addPersistentParam( "Threshold", &mThreshold, 170, "min=0 max=255");
+	mParams.addPersistentParam( "Threshold", &mThreshold, 150, "min=0 max=255");
 	mParams.addPersistentParam( "Blur size", &mBlurSize, 10, "min=1 max=15" );
 	mParams.addPersistentParam( "Min area", &mMinArea, 0.001f, "min=0.0 max=1.0 step=0.001" );
 	mParams.addPersistentParam( "Max area", &mMaxArea, 0.2f, "min=0.0 max=1.0 step=0.001" );
@@ -216,7 +216,7 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 	{
 		int32_t winner = findClosestBlobKnn( newBlobs, mBlobs[ i ], 3, 0 );
 
-		if ( winner = -1 ) // track has died
+		if ( winner == -1 ) // track has died
 		{
 			// TODO:: signal blob end
 			mBlobs[ i ]->mId = -1; // marked for deletion
@@ -288,9 +288,9 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 					}
 				}
 			}
-			else
-			{ // no conflicts, so simply update
-				mBlobs[ winner ]->mId = mBlobs[ i ]->mId;
+			else // no conflicts, so simply update
+			{
+				newBlobs[ winner ]->mId = mBlobs[ i ]->mId;
 				/*
 				newBlobs->blobs[winner].age = trackedBlobs[i].age;
 				newBlobs->blobs[winner].sitting = trackedBlobs[i].sitting;
@@ -312,7 +312,7 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 		{
 			// erase track
 			// TODO: signal here? or was this before?
-            // //ofNotifyEvent(blobDeleted, trackedBlobs[i]);
+			// //ofNotifyEvent(blobDeleted, trackedBlobs[i]);
 			mBlobs.erase( mBlobs.begin() + i, mBlobs.begin() + i + 1 );
 			i--; // decrement one since we removed an element
 		}
@@ -331,11 +331,11 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 
 					// calculate the acceleration
 					float posDelta = tD.length();
-                    if ( posDelta > 0.001 )
+					if ( posDelta > 0.001 )
 					{
 						// TODO: signal move
-                        //ofNotifyEvent(blobMoved, trackedBlobs[i]);
-                    }
+						//ofNotifyEvent(blobMoved, trackedBlobs[i]);
+					}
 
 					// TODO: add other blob features
 				}
@@ -349,9 +349,9 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 	// have id of -1. if the id is -1, we need to make a new track.
 	for ( size_t i = 0; i < newBlobs.size(); i++ )
 	{
-		if ( newBlobs[i]->mId == -1 )
+		if ( newBlobs[ i ]->mId == -1 )
 		{
-			//add new track
+			// add new track
 			newBlobs[ i ]->mId = mIdCounter;
 			mIdCounter++;
 			//newBlobs->blobs[i].downTime = ofGetElapsedTimef();
@@ -370,7 +370,7 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
  * \param track current blob
  * \param k number of nearest neighbours, must be odd number (1, 3, 5 are common)
  * \param thres optimization threshold
- * Returns true the closest blob id if found or -1
+ * Returns the closest blob id if found or -1
  */
 int32_t BlobTracker::findClosestBlobKnn( const vector< BlobRef > &newBlobs, BlobRef track,
 		int k, double thresh )
@@ -388,40 +388,40 @@ int32_t BlobTracker::findClosestBlobKnn( const vector< BlobRef > &newBlobs, Blob
 	Vec2f pT = track->mCentroid;
 	float distSquared;
 
-    // search for blobs
-    for ( size_t i = 0; i < newBlobs.size(); i++ )
+	// search for blobs
+	for ( size_t i = 0; i < newBlobs.size(); i++ )
 	{
 		p = newBlobs[ i ]->mCentroid;
-        distSquared = p.distanceSquared( pT );
+		distSquared = p.distanceSquared( pT );
 
-        if ( distSquared <= thresh )
+		if ( distSquared <= thresh )
 		{
 			winner = i;
-            return winner;
-        }
+			return winner;
+		}
 
-        // check if this blob is closer to the point than what we've seen
-        // so far and add it to the index/distance list if positive
+		// check if this blob is closer to the point than what we've seen
+		// so far and add it to the index/distance list if positive
 
-        // search the list for the first point with a longer distance
-        for ( iter = nbors.begin();
+		// search the list for the first point with a longer distance
+		for ( iter = nbors.begin();
 				iter != nbors.end() && distSquared >= iter->second; ++iter );
 
-        if ( ( iter != nbors.end() ) || ( nbors.size() < k ) )
+		if ( ( iter != nbors.end() ) || ( nbors.size() < k ) )
 		{
-            nbors.insert( iter, 1, std::pair< size_t, double >( i, distSquared ));
-            // too many items in list, get rid of farthest neighbor
-            if ( nbors.size() > k )
-                nbors.pop_back();
-        }
-    }
+			nbors.insert( iter, 1, std::pair< size_t, double >( i, distSquared ));
+			// too many items in list, get rid of farthest neighbor
+			if ( nbors.size() > k )
+				nbors.pop_back();
+		}
+	}
 
 
 	/********************************************************************
-     * we now have k nearest neighbors who cast a vote, and the majority
-     * wins. we use each class average distance to the target to break any
-     * possible ties.
-     *********************************************************************/
+	 * we now have k nearest neighbors who cast a vote, and the majority
+	 * wins. we use each class average distance to the target to break any
+	 * possible ties.
+	 *********************************************************************/
 
 	// a mapping from labels (IDs) to count/distance
 	map< int32_t, pair< size_t, double > > votes;
@@ -511,7 +511,12 @@ void BlobTracker::draw()
 
 void BlobTracker::playVideoCB()
 {
-	fs::path moviePath = app::getOpenFilePath( app::getAppPath() );
+	fs::path appPath( app::getAppPath() );
+#ifdef CINDER_MAC
+	appPath /= "..";
+#endif
+	fs::path moviePath = app::getOpenFilePath( appPath );
+
 	if ( !moviePath.empty() )
 	{
 		try
