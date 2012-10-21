@@ -21,7 +21,11 @@ std::string getTimestamp()
 	static int index = 0;
 
 	time(&ltime);
+#ifdef CINDER_COCOA
 	localtime_r(&ltime, &tm);
+#else if CINDER_MSW
+	localtime_s( &tm, &ltime );
+#endif
 	if (last_sec != tm.tm_sec)
 		index = 0;
 
