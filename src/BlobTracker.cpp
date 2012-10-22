@@ -1,3 +1,24 @@
+/*
+ Copyright (C) 2012 Gabor Papp
+
+ This program is free software; you can redistribute it and/or modify
+ it under the terms of the GNU General Public License as published by
+ the Free Software Foundation; either version 3 of the License, or
+ (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program. If not, see <http://www.gnu.org/licenses/>.
+
+ Thanks to Community Core Vision, http://nuicode.com/projects/tbeta
+ and Patricio Gonzalez Vivo for ofxBlobTracker,
+ https://github.com/patriciogonzalezvivo/ofxBlobTracker
+*/
+
 #include <boost/assign.hpp>
 #include <list>
 #include <map>
@@ -109,8 +130,6 @@ void BlobTracker::update()
 	{
 		setupGui();
 		lastSource = mSource;
-
-
 	}
 
 	// select source
@@ -198,7 +217,7 @@ void BlobTracker::update()
 				b->mCentroid = Vec2f( m.m10 / m.m00, m.m01 / m.m00 );
 
 				b->mBbox = mNormMapping.map( b->mBbox );
-				b->mCentroid = b->mLastCentroid = mNormMapping.map( b->mCentroid );
+				b->mCentroid = b->mPrevCentroid = mNormMapping.map( b->mCentroid );
 				newBlobs.push_back( b );
 			}
 		}
@@ -218,7 +237,7 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 
 		if ( winner == -1 ) // track has died
 		{
-			// TODO:: signal blob end
+			mBlobsEndedSig( BlobEvent( mBlobs[ i ] ) );
 			mBlobs[ i ]->mId = -1; // marked for deletion
 		}
 		else
@@ -238,12 +257,6 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 				if ( j == mBlobs.size() ) // got to end without finding it
 				{
 					newBlobs[ winner ]->mId = mBlobs[ i ]->mId;
-					/*
-					   newBlobs->blobs[winner].age = trackedBlobs[i].age;
-					   newBlobs->blobs[winner].sitting = trackedBlobs[i].sitting;
-					   newBlobs->blobs[winner].downTime = trackedBlobs[i].downTime;
-					   newBlobs->blobs[winner].lastTimeTimeWasChecked = trackedBlobs[i].lastTimeTimeWasChecked;
-					*/
 					mBlobs[ i ] = newBlobs[ winner ];
 				}
 				else // found it, compare with current blob
@@ -259,30 +272,21 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 					if ( distNew < distOld ) // update
 					{
 						newBlobs[ winner ]->mId = mBlobs[ i ]->mId;
-						/*
-						newBlobs->blobs[winner].age = trackedBlobs[i].age;
-						newBlobs->blobs[winner].sitting = trackedBlobs[i].sitting;
-						newBlobs->blobs[winner].downTime = trackedBlobs[i].downTime;
-						newBlobs->blobs[winner].lastTimeTimeWasChecked = trackedBlobs[i].lastTimeTimeWasChecked;
-						*/
-						//TODO-----------------------------------------------
-						//now the old winning blob has lost the win.
-						//I should also probably go through all the newBlobs
-						//at the end of this loop and if there are ones without
-						//any winning matches, check if they are close to this
-						//one. Right now I'm not doing that to prevent a
-						//recursive mess. It'll just be a new track.
-
-						//ofNotifyEvent(blobDeleted, trackedBlobs[j]);
-						// TODO: signal blob exit
+						/* TODO
+						   now the old winning blob has lost the win.
+						   I should also probably go through all the newBlobs
+						   at the end of this loop and if there are ones without
+						   any winning matches, check if they are close to this
+						   one. Right now I'm not doing that to prevent a
+						   recursive mess. It'll just be a new track.
+						 */
+						mBlobsEndedSig( BlobEvent( mBlobs[ j ] ) );
 						// mark the blob for deletion
 						mBlobs[ j ]->mId = -1;
-						//-----------------------------------------------------
 					}
 					else // delete
 					{
-						//ofNotifyEvent(blobDeleted, trackedBlobs[i]);
-						// TODO: signal blob exit
+						mBlobsEndedSig( BlobEvent( mBlobs[ i ] ) );
 						// mark the blob for deletion
 						mBlobs[ i ]->mId = -1;
 					}
@@ -291,12 +295,6 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 			else // no conflicts, so simply update
 			{
 				newBlobs[ winner ]->mId = mBlobs[ i ]->mId;
-				/*
-				newBlobs->blobs[winner].age = trackedBlobs[i].age;
-				newBlobs->blobs[winner].sitting = trackedBlobs[i].sitting;
-				newBlobs->blobs[winner].downTime = trackedBlobs[i].downTime;
-				newBlobs->blobs[winner].lastTimeTimeWasChecked = trackedBlobs[i].lastTimeTimeWasChecked;
-				*/
 			}
 		}
 	}
@@ -311,8 +309,6 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 		if ( mBlobs[ i ]->mId == -1 ) // dead
 		{
 			// erase track
-			// TODO: signal here? or was this before?
-			// //ofNotifyEvent(blobDeleted, trackedBlobs[i]);
 			mBlobs.erase( mBlobs.begin() + i, mBlobs.begin() + i + 1 );
 			i--; // decrement one since we removed an element
 		}
@@ -324,17 +320,16 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 				{
 					// update track
 					// store the last centroid
-					newBlobs[ j ]->mLastCentroid = mBlobs[ i ]->mCentroid;
+					newBlobs[ j ]->mPrevCentroid = mBlobs[ i ]->mCentroid;
 					mBlobs[ i ] = newBlobs[ j ];
 
-					Vec2f tD = mBlobs[ i ]->mCentroid - mBlobs[ i ]->mLastCentroid;
+					Vec2f tD = mBlobs[ i ]->mCentroid - mBlobs[ i ]->mPrevCentroid;
 
 					// calculate the acceleration
 					float posDelta = tD.length();
 					if ( posDelta > 0.001 )
 					{
-						// TODO: signal move
-						//ofNotifyEvent(blobMoved, trackedBlobs[i]);
+						mBlobsMovedSig( BlobEvent( mBlobs[ i ] ) );
 					}
 
 					// TODO: add other blob features
@@ -354,13 +349,10 @@ void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
 			// add new track
 			newBlobs[ i ]->mId = mIdCounter;
 			mIdCounter++;
-			//newBlobs->blobs[i].downTime = ofGetElapsedTimef();
-			//newBlobs->blobs[i].lastTimeTimeWasChecked = ofGetElapsedTimeMillis();
 
 			mBlobs.push_back( newBlobs[ i ] );
 
-			// TODO: signal blob enter
-			//ofNotifyEvent(blobAdded, trackedBlobs.back());
+			mBlobsBeganSig( BlobEvent( newBlobs[ i ] ) );
 		}
 	}
 }

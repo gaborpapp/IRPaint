@@ -64,6 +64,10 @@ class IRPaint : public AppBasic
 		bool mHasBlobs;
 
 		RectMapping mCoordMapping;
+
+		void blobsBegan( mndl::BlobTracker::BlobEvent event );
+		void blobsMoved( mndl::BlobTracker::BlobEvent event );
+		void blobsEnded( mndl::BlobTracker::BlobEvent event );
 };
 
 void IRPaint::prepareSettings( Settings *settings )
@@ -75,6 +79,21 @@ void IRPaint::resize( ResizeEvent event )
 {
 	mCoordMapping = RectMapping( Rectf( 0, 0, 1, 1 ),
 			Rectf( Vec2f( 0, 0 ), event.getSize() ) );
+}
+
+void IRPaint::blobsBegan( mndl::BlobTracker::BlobEvent event )
+{
+	console() << "blob began " << event.getId() << " " << event.getPos() << endl;
+}
+
+void IRPaint::blobsMoved( mndl::BlobTracker::BlobEvent event )
+{
+	console() << "blob moved " << event.getId() << " " << event.getPos() << endl;
+}
+
+void IRPaint::blobsEnded( mndl::BlobTracker::BlobEvent event )
+{
+	console() << "blob ended " << event.getId() << " " << event.getPos() << endl;
 }
 
 void IRPaint::setup()
@@ -102,6 +121,10 @@ void IRPaint::setup()
 	mParams.addButton( "Reset", std::bind( &IRPaint::resetStrokes, this ), " key=SPACE " );
 
 	mTracker.setup();
+
+	mTracker.registerBlobsCallbacks< IRPaint >( &IRPaint::blobsBegan,
+												&IRPaint::blobsMoved,
+												&IRPaint::blobsEnded, this );
 
 	setFrameRate( 60 );
 
