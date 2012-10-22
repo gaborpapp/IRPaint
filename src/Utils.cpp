@@ -20,13 +20,13 @@ std::string getTimestamp()
 	static int last_sec = 0;
 	static int index = 0;
 
-	time(&ltime);
-#ifdef CINDER_COCOA
-	localtime_r(&ltime, &tm);
-#else if CINDER_MSW
+	time( &ltime );
+#if defined( CINDER_MAC )
+	localtime_r( &ltime, &tm );
+#elif defined( CINDER_MSW )
 	localtime_s( &tm, &ltime );
 #endif
-	if (last_sec != tm.tm_sec)
+	if ( last_sec != tm.tm_sec )
 		index = 0;
 
 	stringstream ss;
