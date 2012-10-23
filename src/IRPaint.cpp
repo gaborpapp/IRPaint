@@ -83,17 +83,17 @@ void IRPaint::resize( ResizeEvent event )
 
 void IRPaint::blobsBegan( mndl::BlobTracker::BlobEvent event )
 {
-	console() << "blob began " << event.getId() << " " << event.getPos() << endl;
+	//console() << "blob began " << event.getId() << " " << event.getPos() << endl;
 }
 
 void IRPaint::blobsMoved( mndl::BlobTracker::BlobEvent event )
 {
-	console() << "blob moved " << event.getId() << " " << event.getPos() << endl;
+	//console() << "blob moved " << event.getId() << " " << event.getPos() << endl;
 }
 
 void IRPaint::blobsEnded( mndl::BlobTracker::BlobEvent event )
 {
-	console() << "blob ended " << event.getId() << " " << event.getPos() << endl;
+	//console() << "blob ended " << event.getId() << " " << event.getPos() << endl;
 }
 
 void IRPaint::setup()
