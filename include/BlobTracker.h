@@ -40,7 +40,9 @@ class BlobTracker
 	public:
 		BlobTracker() :
 			mSavingVideo( false ),
-			mIdCounter( 1 ) {}
+			mIdCounter( 1 ),
+			mIsCalibrating( false )
+		{}
 
 		void setup();
 		void update();
@@ -87,19 +89,19 @@ class BlobTracker
 		typedef boost::signals2::signal< BlobCallback > BlobSignal;
 
 		template< typename T >
-		void registerBlobsBegan( void( T::*fn )( BlobEvent ), T *obj )
+		boost::signals2::connection registerBlobsBegan( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
-		void registerBlobsMoved( void( T::*fn )( BlobEvent ), T *obj )
+		boost::signals2::connection registerBlobsMoved( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
-		void registerBlobsEnded( void( T::*fn )( BlobEvent ), T *obj )
+		boost::signals2::connection registerBlobsEnded( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
 		void registerBlobsCallbacks( void( T::*fnBegan )( BlobEvent ),
@@ -110,6 +112,11 @@ class BlobTracker
 			registerBlobsBegan< T >( fnBegan, obj );
 			registerBlobsMoved< T >( fnMoved, obj );
 			registerBlobsEnded< T >( fnEnded, obj );
+		}
+
+		void unregisterBlobsCallback( boost::signals2::connection connection )
+		{
+			connection.disconnect();
 		}
 
 		size_t getBlobNum() const;
@@ -170,6 +177,16 @@ class BlobTracker
 		BlobSignal mBlobsBeganSig;
 		BlobSignal mBlobsMovedSig;
 		BlobSignal mBlobsEndedSig;
+
+		// calibration
+		void calibrate();
+
+		void calibrationBlobsBegan( BlobEvent event );
+		void calibrationBlobsEnded( BlobEvent event );
+
+		bool mIsCalibrating;
+		int mCalibrationPointIndex;
+
 
 		// normalizes blob coordinates from camera 2d coords to [0, 1]
 		ci::RectMapping mNormMapping;

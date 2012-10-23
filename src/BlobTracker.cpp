@@ -118,6 +118,9 @@ void BlobTracker::setupGui()
 
 	enumNames = boost::assign::list_of("None")("Original")("Blurred")("Thresholded");
 	mParams.addPersistentParam( "Draw capture", enumNames, &mDrawCapture, 0, "key='c'" );
+
+	mParams.addSeparator();
+	mParams.addButton( "Calibrate", std::bind( &BlobTracker::calibrate, this ) );
 }
 
 void BlobTracker::update()
@@ -550,6 +553,36 @@ void BlobTracker::saveVideoCB()
 				CAPTURE_WIDTH, CAPTURE_HEIGHT, format );
 	}
 	mSavingVideo = !mSavingVideo;
+}
+
+void BlobTracker::calibrate()
+{
+	static boost::signals2::connection sBeganCB, sEndedCB;
+
+	if ( mIsCalibrating )
+	{
+		mParams.setOptions( "Calibrate", "label=`Calibrate`" );
+		unregisterBlobsCallback( sBeganCB );
+		unregisterBlobsCallback( sEndedCB );
+	}
+	else
+	{
+		mParams.setOptions( "Calibrate", "label=`Stop calibration`" );
+		sBeganCB = registerBlobsBegan< BlobTracker >( &BlobTracker::calibrationBlobsBegan, this );
+		sEndedCB = registerBlobsEnded< BlobTracker >( &BlobTracker::calibrationBlobsEnded, this );
+		mCalibrationPointIndex = 0;
+	}
+	mIsCalibrating = !mIsCalibrating;
+}
+
+void BlobTracker::calibrationBlobsBegan( BlobTracker::BlobEvent event )
+{
+	app::console() << "calib blob begin " << event.getId() << std::endl;
+}
+
+void BlobTracker::calibrationBlobsEnded( BlobEvent event )
+{
+	app::console() << "calib blob end " << event.getId() << std::endl;
 }
 
 void BlobTracker::shutdown()
