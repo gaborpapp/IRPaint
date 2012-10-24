@@ -54,6 +54,7 @@ class IRPaint : public AppBasic
 
 		float mFps;
 		mndl::BlobTracker mTracker;
+		shared_ptr< mndl::ManualCalibration > mCalibratorRef;
 
 		void updateStrokes();
 		void resetStrokes();
@@ -121,6 +122,7 @@ void IRPaint::setup()
 	mParams.addButton( "Reset", std::bind( &IRPaint::resetStrokes, this ), " key=SPACE " );
 
 	mTracker.setup();
+	mCalibratorRef = mTracker.getCalibrator();
 
 	mTracker.registerBlobsCallbacks< IRPaint >( &IRPaint::blobsBegan,
 												&IRPaint::blobsMoved,
@@ -159,7 +161,9 @@ void IRPaint::updateStrokes()
 			mStrokes.push_back( Stroke() );
 		}
 
-		Vec2f pos = mCoordMapping.map( mTracker.getBlobCentroid( 0 ) );
+		Vec2f pos = mTracker.getBlobCentroid( 0 );
+		pos = mCalibratorRef->map( pos );
+		pos = mCoordMapping.map( pos );
 		mStrokes[ mCurrentStrokeIdx ].push_back( pos );
 
 		mHasBlobs = true;

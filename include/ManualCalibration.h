@@ -25,6 +25,7 @@
 
 #include "Blob.h"
 #include "PParams.h"
+#include "Triangle.h"
 
 namespace mndl {
 
@@ -45,15 +46,20 @@ class ManualCalibration
 		void load( const ci::fs::path &fname = ci::fs::path() );
 		void save();
 
+		//! Returns point mapped according to calibration grid.
+		ci::Vec2f map( const ci::Vec2f &p );
+
 	private:
 		BlobTracker *mBlobTrackerRef;
 
 		void blobsBegan( BlobEvent event );
+		void blobsMoved( BlobEvent event );
 
 		//! Switches calibration of tracking with projection on and off
 		void toggleCalibrationCB();
 
 		bool mIsCalibrating;
+		bool mIsDebugging;
 		size_t mCalibrationGridIndex; //< current index in \a mCalibrationGrid
 		ci::Vec2i mCalibrationGridSize;
 		std::vector< ci::Vec2f > mCalibrationGrid; //< normalized coordinates of calibration points
@@ -64,6 +70,10 @@ class ManualCalibration
 		int32_t mCalibrationId; //< id of the calibration blob
 
 		void resetGrid();
+
+		std::vector< Trianglef > mTriangleGrid; //< calibration points as triangles
+		std::vector< Trianglef > mCameraTriangleGrid; //< calibration points as triangles in camera image
+		void setupTriangleGrid();
 
 		// config
 		ci::fs::path mConfigFile;

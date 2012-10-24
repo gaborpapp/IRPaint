@@ -88,6 +88,11 @@ class BlobTracker
 		ci::Rectf getBlobBoundingRect( size_t i ) const;
 		ci::Vec2f getBlobCentroid( size_t i ) const;
 
+		std::shared_ptr< ManualCalibration > getCalibrator() const
+		{
+			return mCalibratorRef;
+		}
+
 	private:
 		enum {
 			SOURCE_RECORDING = 0,
