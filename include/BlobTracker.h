@@ -31,6 +31,8 @@
 #include "cinder/Rect.h"
 #include "cinder/Vector.h"
 
+#include "Blob.h"
+#include "ManualCalibration.h"
 #include "PParams.h"
 
 namespace mndl {
@@ -40,50 +42,13 @@ class BlobTracker
 	public:
 		BlobTracker() :
 			mSavingVideo( false ),
-			mIdCounter( 1 ),
-			mIsCalibrating( false )
+			mIdCounter( 1 )
 		{}
 
 		void setup();
 		void update();
 		void draw();
 		void shutdown();
-
-		struct Blob
-		{
-			Blob() : mId( -1 ) {}
-
-			int32_t mId;
-			ci::Rectf mBbox;
-			ci::Vec2f mCentroid;
-			ci::Vec2f mPrevCentroid;
-		};
-		typedef std::shared_ptr< Blob > BlobRef;
-
-		//! Represents a blob event
-		class BlobEvent
-		{
-			public:
-				BlobEvent( BlobRef blobRef ) : mBlobRef( blobRef ) {}
-
-				//! Returns an ID unique for the lifetime of the blob
-				int32_t getId() const { return mBlobRef->mId; }
-				//! Returns the x position of the blob centroid normalized to the image source width
-				float getX() const { return mBlobRef->mCentroid.x; }
-				//! Returns the y position of the blob centroid normalized to the image source height
-				float getY() const { return mBlobRef->mCentroid.y; }
-				//! Returns the position of the blob centroid normalized to the image resolution
-				ci::Vec2f getPos() const { return mBlobRef->mCentroid; }
-				//! Returns the previous x position of the blob centroid normalized to the image source width
-				float getPrevX() const { return mBlobRef->mPrevCentroid.x; }
-				//! Returns the previous y position of the blob centroid normalized to the image source height
-				float getPrevY() const { return mBlobRef->mPrevCentroid.y; }
-				//! Returns the previous position of the blob centroid normalized to the image resolution
-				ci::Vec2f getPrevPos() const { return mBlobRef->mPrevCentroid; }
-
-			private:
-				BlobRef mBlobRef;
-		};
 
 		typedef void( BlobCallback )( BlobEvent );
 		typedef boost::signals2::signal< BlobCallback > BlobSignal;
@@ -178,21 +143,7 @@ class BlobTracker
 		BlobSignal mBlobsMovedSig;
 		BlobSignal mBlobsEndedSig;
 
-		//! Switches calibration of tracking with projection on and off
-		void toggleCalibrationCB();
-
-		void calibrationBlobsBegan( BlobEvent event );
-		void calibrationBlobsEnded( BlobEvent event );
-
-		bool mIsCalibrating;
-		size_t mCalibrationGridIndex; //< current index in \a mCalibrationGrid
-		ci::Vec2i mCalibrationGridSize;
-		std::vector< ci::Vec2f > mCalibrationGrid; //< normalized coordinates of calibration points
-		std::vector< ci::Vec2f > mCameraCalibrationGrid; //< normalized coordinates in camera image
-
-		int mLastCalibrationIndexReceived; //< last point index calibrated in \a mCalibrationGrid
-		ci::Vec2f mCalibrationPos; //< normalized blob position
-		int32_t mCalibrationId; //< id of the calibration blob
+		std::shared_ptr< ManualCalibration > mCalibratorRef;
 
 		// normalizes blob coordinates from camera 2d coords to [0, 1]
 		ci::RectMapping mNormMapping;

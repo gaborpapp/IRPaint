@@ -76,6 +76,8 @@ void BlobTracker::setup()
 		mCaptures.push_back( Capture() );
 	}
 
+	mCalibratorRef = shared_ptr< ManualCalibration >( new ManualCalibration( this ) );
+
 	mParams = params::PInterfaceGl( "Tracker", Vec2i( 350, 550 ) );
 	mParams.addPersistentSizeAndPosition();
 	setupGui();
@@ -120,12 +122,6 @@ void BlobTracker::setupGui()
 
 	enumNames = boost::assign::list_of("None")("Original")("Blurred")("Thresholded");
 	mParams.addPersistentParam( "Draw capture", enumNames, &mDrawCapture, 0, "key='c'" );
-
-	mParams.addSeparator();
-	mParams.addText( "Calibration" );
-	mParams.addButton( "Calibrate", std::bind( &BlobTracker::toggleCalibrationCB, this ) );
-	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 2, "min=2 max=16" );
-	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 2, "min=2 max=16" );
 }
 
 void BlobTracker::update()
@@ -233,26 +229,7 @@ void BlobTracker::update()
 		trackBlobs( newBlobs );
 	}
 
-	// calibration
-	if ( mIsCalibrating )
-	{
-		if ( mLastCalibrationIndexReceived == mCalibrationGridIndex )
-		{
-			mCameraCalibrationGrid.push_back( mCalibrationPos );
-			mCalibrationGridIndex++;
-			if ( mCalibrationGridIndex >= mCalibrationGrid.size() )
-			{
-				app::console() << "camera calibration: " << endl;
-				for ( vector< Vec2f >::const_iterator it = mCameraCalibrationGrid.begin();
-						it != mCameraCalibrationGrid.end(); ++it )
-				{
-					app::console() << " " << *it;
-				}
-				app::console() << endl;
-				toggleCalibrationCB();
-			}
-		}
-	}
+	mCalibratorRef->update();
 }
 
 void BlobTracker::trackBlobs( vector< BlobRef > newBlobs )
@@ -490,22 +467,8 @@ void BlobTracker::draw()
 	gl::setViewport( app::getWindowBounds() );
 
 	gl::enableAlphaBlending();
-	if ( mIsCalibrating )
-	{
-		RectMapping calibMapping( Rectf( 0, 0, 1, 1 ), app::getWindowBounds() );
-		float radius = app::getWindowHeight() / ( 2. * mCalibrationGrid.size() );
-		for ( size_t i = 0; i < mCalibrationGrid.size(); i++ )
-		{
-			if ( i < mCalibrationGridIndex )
-				gl::color( Color( 0, 1, 0 ) );
-			else
-			if ( i == mCalibrationGridIndex )
-				gl::color( Color( 1, .8, .1 ) );
-			else
-				gl::color( Color::gray( .8 ) );
-			gl::drawSolidCircle( calibMapping.map( mCalibrationGrid[ i ] ), radius );
-		}
-	}
+
+	mCalibratorRef->draw();
 
 	if ( ( mDrawCapture > 0 ) && mTextureOrig )
 	{
@@ -606,61 +569,6 @@ void BlobTracker::saveVideoCB()
 				CAPTURE_WIDTH, CAPTURE_HEIGHT, format );
 	}
 	mSavingVideo = !mSavingVideo;
-}
-
-void BlobTracker::toggleCalibrationCB()
-{
-	static boost::signals2::connection sBeganCB;
-
-	if ( mIsCalibrating )
-	{
-		mParams.setOptions( "Calibrate", "label=`Calibrate`" );
-		unregisterBlobsCallback( sBeganCB );
-
-		// calibration is not finished, reset camera grid to default
-		if ( mCalibrationGridIndex < mCalibrationGrid.size() )
-		{
-			mCameraCalibrationGrid = mCalibrationGrid;
-		}
-	}
-	else
-	{
-		mCalibrationGrid.clear();
-		float stepX = 1.f / (float)( mCalibrationGridSize.x - 1 );
-		float stepY = 1.f / (float)( mCalibrationGridSize.y - 1 );
-		for ( int y = 0; y < mCalibrationGridSize.y; y++ )
-		{
-			for ( int x = 0; x < mCalibrationGridSize.x; x++ )
-			{
-				mCalibrationGrid.push_back( Vec2f( stepX * x, stepY * y ) );
-			}
-		}
-
-		mParams.setOptions( "Calibrate", "label=`Stop calibration`" );
-		sBeganCB = registerBlobsBegan< BlobTracker >( &BlobTracker::calibrationBlobsBegan, this );
-		mCalibrationGridIndex = 0;
-		mLastCalibrationIndexReceived = -1;
-		mCalibrationId = 0;
-		mCameraCalibrationGrid.clear();
-	}
-	mIsCalibrating = !mIsCalibrating;
-}
-
-void BlobTracker::calibrationBlobsBegan( BlobTracker::BlobEvent event )
-{
-	app::console() << "calib blob begin " << event.getId() << std::endl;
-	if ( ( mLastCalibrationIndexReceived < (int)mCalibrationGridIndex ) &&
-		 ( mCalibrationId != event.getId() ) )
-	{
-		mLastCalibrationIndexReceived = mCalibrationGridIndex;
-		mCalibrationPos = event.getPos();
-		mCalibrationId = event.getId();
-	}
-}
-
-void BlobTracker::calibrationBlobsEnded( BlobEvent event )
-{
-	app::console() << "calib blob end " << event.getId() << std::endl;
 }
 
 void BlobTracker::shutdown()

@@ -65,9 +65,9 @@ class IRPaint : public AppBasic
 
 		RectMapping mCoordMapping;
 
-		void blobsBegan( mndl::BlobTracker::BlobEvent event );
-		void blobsMoved( mndl::BlobTracker::BlobEvent event );
-		void blobsEnded( mndl::BlobTracker::BlobEvent event );
+		void blobsBegan( mndl::BlobEvent event );
+		void blobsMoved( mndl::BlobEvent event );
+		void blobsEnded( mndl::BlobEvent event );
 };
 
 void IRPaint::prepareSettings( Settings *settings )
@@ -81,17 +81,17 @@ void IRPaint::resize( ResizeEvent event )
 			Rectf( Vec2f( 0, 0 ), event.getSize() ) );
 }
 
-void IRPaint::blobsBegan( mndl::BlobTracker::BlobEvent event )
+void IRPaint::blobsBegan( mndl::BlobEvent event )
 {
 	//console() << "blob began " << event.getId() << " " << event.getPos() << endl;
 }
 
-void IRPaint::blobsMoved( mndl::BlobTracker::BlobEvent event )
+void IRPaint::blobsMoved( mndl::BlobEvent event )
 {
 	//console() << "blob moved " << event.getId() << " " << event.getPos() << endl;
 }
 
-void IRPaint::blobsEnded( mndl::BlobTracker::BlobEvent event )
+void IRPaint::blobsEnded( mndl::BlobEvent event )
 {
 	//console() << "blob ended " << event.getId() << " " << event.getPos() << endl;
 }

@@ -1,7 +1,8 @@
 env = Environment()
 
 env['APP_TARGET'] = 'IRPaint'
-env['APP_SOURCES'] = ['IRPaint.cpp', 'BlobTracker.cpp', 'PParams.cpp', 'Utils.cpp']
+env['APP_SOURCES'] = ['IRPaint.cpp', 'BlobTracker.cpp', 'ManualCalibration.cpp',
+						'PParams.cpp', 'Utils.cpp']
 env['ASSETS'] = []
 env['DEBUG'] = 1
 
