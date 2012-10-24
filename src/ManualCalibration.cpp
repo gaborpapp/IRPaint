@@ -41,9 +41,6 @@ ManualCalibration::ManualCalibration( BlobTracker *bt ) :
 	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 2, "min=2 max=16" );
 	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 2, "min=2 max=16" );
 
-	// TODO: debug
-	mBlobTrackerRef->registerBlobsMoved< ManualCalibration >( &ManualCalibration::blobsMoved, this );
-
 	resetGrid();
 	load();
 }
@@ -154,15 +151,9 @@ void ManualCalibration::update()
 	{
 		mCameraCalibrationGrid.push_back( mCalibrationPos );
 		mCalibrationGridIndex++;
+		// calibration finished?
 		if ( mCalibrationGridIndex >= mCalibrationGrid.size() )
 		{
-			app::console() << "camera calibration: " << endl;
-			for ( vector< Vec2f >::const_iterator it = mCameraCalibrationGrid.begin();
-					it != mCameraCalibrationGrid.end(); ++it )
-			{
-				app::console() << " " << *it;
-			}
-			app::console() << endl;
 			toggleCalibrationCB();
 			setupTriangleGrid();
 		}
@@ -171,6 +162,8 @@ void ManualCalibration::update()
 
 Vec2f ManualCalibration::map( const ci::Vec2f &p )
 {
+	// TODO: optimize this with a lookup table maybe?
+
 	for ( vector< Trianglef >::const_iterator it = mCameraTriangleGrid.begin(),
 			cit = mTriangleGrid.begin();
 			it != mCameraTriangleGrid.end(); ++it, ++cit )
@@ -182,8 +175,8 @@ Vec2f ManualCalibration::map( const ci::Vec2f &p )
 		}
 	}
 
-	// outside grid, map position according to first triangle
-	// (any triangle would do it)
+	// point is outside of the grid
+	// map position according to first triangle (any triangle would do it)
 	Vec3f bary = mCameraTriangleGrid[ 0 ].toBarycentric( p );
 	return mTriangleGrid[ 0 ].fromBarycentric( bary );
 }
@@ -210,20 +203,23 @@ void ManualCalibration::draw()
 	else
 	if ( mIsDebugging )
 	{
-		gl::color( ColorA( 0, 1, 1, .5 ) );
-		gl::drawSolidCircle( calibMapping.map( mCalibrationPos ), 10 );
+		bool hasBlobs = mBlobTrackerRef->getBlobNum() > 0;
+		Vec2f pos;
+		if ( hasBlobs )
+			pos = mBlobTrackerRef->getBlobCentroid( 0 );
+
 		for ( vector< Trianglef >::const_iterator it = mCameraTriangleGrid.begin(),
 			    cit = mTriangleGrid.begin();
 				it != mCameraTriangleGrid.end(); ++it, ++cit )
 		{
-			if ( it->contains( mCalibrationPos ) )
+			if ( hasBlobs && it->contains( pos ) )
 			{
 				gl::color( ColorA( 1, 0, 0, .5 ) );
 				gl::drawSolidTriangle( calibMapping.map( it->a() ),
 						calibMapping.map( it->b() ),
 						calibMapping.map( it->c() ) );
 
-				Vec3f bary = it->toBarycentric( mCalibrationPos );
+				Vec3f bary = it->toBarycentric( pos );
 				Vec2f p = cit->fromBarycentric( bary );
 				gl::color( ColorA( 1, .6, .1, .5 ) );
 				gl::drawSolidCircle( calibMapping.map( p ), 10 );
@@ -249,12 +245,6 @@ void ManualCalibration::blobsBegan( BlobEvent event )
 		mCalibrationPos = event.getPos();
 		mCalibrationId = event.getId();
 	}
-}
-
-void ManualCalibration::blobsMoved( BlobEvent event )
-{
-	mCalibrationPos = event.getPos();
-	app::console() << "calib move " << mCalibrationPos << endl;
 }
 
 void ManualCalibration::load( const fs::path &fname )
