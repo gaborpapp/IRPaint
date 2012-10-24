@@ -19,6 +19,8 @@
 
 #include <vector>
 
+#include "cinder/Cinder.h"
+#include "cinder/Filesystem.h"
 #include "cinder/Vector.h"
 
 #include "Blob.h"
@@ -32,12 +34,16 @@ class ManualCalibration
 {
 	public:
 		ManualCalibration( BlobTracker *bt );
+		~ManualCalibration();
 
 		void startCalibration();
 		void stopCalibration();
 
 		void update();
 		void draw();
+
+		void load( const ci::fs::path &fname = ci::fs::path() );
+		void save();
 
 	private:
 		BlobTracker *mBlobTrackerRef;
@@ -56,6 +62,11 @@ class ManualCalibration
 		int mLastCalibrationIndexReceived; //< last point index calibrated in \a mCalibrationGrid
 		ci::Vec2f mCalibrationPos; //< normalized blob position
 		int32_t mCalibrationId; //< id of the calibration blob
+
+		void resetGrid();
+
+		// config
+		ci::fs::path mConfigFile;
 
 		// params
 		ci::params::PInterfaceGl mParams;

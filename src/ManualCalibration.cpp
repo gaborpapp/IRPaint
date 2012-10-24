@@ -18,6 +18,8 @@
 #include "cinder/app/App.h"
 
 #include "cinder/gl/gl.h"
+#include "cinder/Utilities.h"
+#include "cinder/Xml.h"
 
 #include "BlobTracker.h"
 #include "ManualCalibration.h"
@@ -36,6 +38,14 @@ ManualCalibration::ManualCalibration( BlobTracker *bt ) :
 	mParams.addButton( "Calibrate", std::bind( &ManualCalibration::toggleCalibrationCB, this ) );
 	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 2, "min=2 max=16" );
 	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 2, "min=2 max=16" );
+
+	resetGrid();
+	load();
+}
+
+ManualCalibration::~ManualCalibration()
+{
+	save();
 }
 
 void ManualCalibration::startCalibration()
@@ -51,6 +61,21 @@ void ManualCalibration::stopCalibration()
 		toggleCalibrationCB();
 }
 
+void ManualCalibration::resetGrid()
+{
+	mCalibrationGrid.clear();
+	float stepX = 1.f / (float)( mCalibrationGridSize.x - 1 );
+	float stepY = 1.f / (float)( mCalibrationGridSize.y - 1 );
+	for ( int y = 0; y < mCalibrationGridSize.y; y++ )
+	{
+		for ( int x = 0; x < mCalibrationGridSize.x; x++ )
+		{
+			mCalibrationGrid.push_back( Vec2f( stepX * x, stepY * y ) );
+		}
+	}
+	mCameraCalibrationGrid = mCalibrationGrid;
+}
+
 void ManualCalibration::toggleCalibrationCB()
 {
 	static boost::signals2::connection sBeganCB;
@@ -63,21 +88,12 @@ void ManualCalibration::toggleCalibrationCB()
 		// calibration is not finished, reset camera grid to default
 		if ( mCalibrationGridIndex < mCalibrationGrid.size() )
 		{
-			mCameraCalibrationGrid = mCalibrationGrid;
+			resetGrid();
 		}
 	}
 	else
 	{
-		mCalibrationGrid.clear();
-		float stepX = 1.f / (float)( mCalibrationGridSize.x - 1 );
-		float stepY = 1.f / (float)( mCalibrationGridSize.y - 1 );
-		for ( int y = 0; y < mCalibrationGridSize.y; y++ )
-		{
-			for ( int x = 0; x < mCalibrationGridSize.x; x++ )
-			{
-				mCalibrationGrid.push_back( Vec2f( stepX * x, stepY * y ) );
-			}
-		}
+		resetGrid();
 
 		mParams.setOptions( "Calibrate", "label=`Stop calibration`" );
 		sBeganCB = mBlobTrackerRef->registerBlobsBegan< ManualCalibration >( &ManualCalibration::blobsBegan, this );
@@ -143,5 +159,67 @@ void ManualCalibration::blobsBegan( BlobEvent event )
 	}
 }
 
-};
+void ManualCalibration::load( const fs::path &fname )
+{
+	fs::path path = fname;
+
+	if ( path.empty() )
+	{
+		path = app::getAssetPath( "calibration.xml" );
+		if ( fname.empty() )
+		{
+#if defined( CINDER_MAC )
+			fs::path assetPath( app::App::getResourcePath() / "assets" );
+#else
+			fs::path assetPath( app::getAppPath() / "assets" );
+#endif
+			createDirectories( assetPath );
+			path = assetPath / "calibration.xml" ;
+		}
+	}
+	mConfigFile = path;
+
+	if ( !fs::exists( path ) )
+		return;
+
+	XmlTree config( loadFile( path ) );
+
+	XmlTree grid = config.getChild( "calibration/grid" );
+	mCalibrationGridSize.x = grid.getAttributeValue< int >( "width" );
+	mCalibrationGridSize.y = grid.getAttributeValue< int >( "height" );
+
+	resetGrid();
+	mCameraCalibrationGrid.clear();
+
+	for( XmlTree::Iter pit = config.begin( "calibration/point");
+			pit != config.end(); ++pit )
+	{
+		Vec2f point( pit->getAttributeValue< float >( "x" ),
+					 pit->getAttributeValue< float >( "y" ) );
+		mCameraCalibrationGrid.push_back( point );
+	}
+}
+
+void ManualCalibration::save()
+{
+	XmlTree config( "calibration", "" );
+
+	XmlTree grid( "grid", "" );
+	grid.setAttribute( "width", mCalibrationGridSize.x );
+	grid.setAttribute( "height", mCalibrationGridSize.y );
+
+	config.push_back( grid );
+
+	for ( vector< Vec2f >::const_iterator it = mCameraCalibrationGrid.begin();
+			it != mCameraCalibrationGrid.end(); ++it )
+	{
+		XmlTree t = XmlTree( "point", "" );
+		t.setAttribute( "x", it->x );
+		t.setAttribute( "y", it->y );
+		config.push_back( t );
+	}
+	config.write( writeFile( mConfigFile ) );
+}
+
+} // namespace mndl
 
