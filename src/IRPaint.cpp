@@ -45,6 +45,10 @@ class IRPaint : public AppBasic
 		void keyDown( KeyEvent event );
 		void resize( ResizeEvent event );
 
+		void mouseDown( MouseEvent event );
+		void mouseDrag( MouseEvent event );
+		void mouseUp( MouseEvent event );
+
 		void update();
 		void draw();
 
@@ -64,11 +68,28 @@ class IRPaint : public AppBasic
 		size_t mCurrentStrokeIdx;
 		bool mHasBlobs;
 
+		//! Mapping from normalized coordinates to window size
 		RectMapping mCoordMapping;
+		//! Mapping from normalized coordinates to brush and color map size (1024x768)
+		RectMapping mMapMapping;
 
 		void blobsBegan( mndl::BlobEvent event );
 		void blobsMoved( mndl::BlobEvent event );
 		void blobsEnded( mndl::BlobEvent event );
+
+		void selectTools( const Vec2f &pos );
+		void placeBrush( const Vec2f &pos );
+
+		// textures, surfaces
+		gl::Texture mBackground;
+		Surface mAreaStencil;
+		Surface mBrushesMap;
+		Surface mColorsMap;
+
+		void loadImages();
+
+		ColorA mBrushColor; //<< current brush color
+		uint32_t mBrushIndex; //<< current color index
 };
 
 void IRPaint::prepareSettings( Settings *settings )
@@ -82,8 +103,39 @@ void IRPaint::resize( ResizeEvent event )
 			Rectf( Vec2f( 0, 0 ), event.getSize() ) );
 }
 
+/** Selects color and brush size from the toolbar from the location of \a pos.
+ *  Called on blob enter or mouse down. **/
+void IRPaint::selectTools( const Vec2f &pos )
+{
+	Vec2f mapPos = mMapMapping.map( pos );
+	Vec2i mapPosi( (int)mapPos.x, (int)mapPos.y );
+
+	ColorA8u colorSelect = mColorsMap.getPixel( mapPosi );
+	if ( colorSelect.a )
+	{
+		mBrushColor = colorSelect;
+	}
+
+	ColorA8u brushSelect = mBrushesMap.getPixel( mapPosi );
+	if ( brushSelect.a )
+	{
+		mBrushIndex = ( brushSelect.r & 0x04 ) |
+					  ( brushSelect.g & 0x02 ) |
+					  ( brushSelect.b & 0x01 );
+	}
+}
+
+//! Puts paint on the location of \a pos with the current color and brush size.
+void IRPaint::placeBrush( const Vec2f &pos )
+{
+}
+
 void IRPaint::blobsBegan( mndl::BlobEvent event )
 {
+	Vec2f pos = mCalibratorRef->map( event.getPos() );
+	pos = mCoordMapping.map( pos );
+
+	selectTools( pos );
 	//console() << "blob began " << event.getId() << " " << event.getPos() << endl;
 }
 
@@ -128,11 +180,24 @@ void IRPaint::setup()
 												&IRPaint::blobsMoved,
 												&IRPaint::blobsEnded, this );
 
+	loadImages();
+
 	setFrameRate( 60 );
 
 	resetStrokes();
 
 	showAllParams( false );
+}
+
+void IRPaint::loadImages()
+{
+	// all images are the same size (1024x768)
+	mBackground = gl::Texture( loadImage( loadResource( RES_BACKGROUND ) ) );
+	mColorsMap = loadImage( loadResource( RES_MAP_COLORS ) );
+	mBrushesMap = loadImage( loadResource( RES_MAP_BRUSHES ) );
+	mAreaStencil = loadImage( loadResource( RES_AREA_STENCIL ) );
+
+	mMapMapping = RectMapping( Rectf( 0, 0, 1, 1 ), mBrushesMap.getBounds() );
 }
 
 void IRPaint::resetStrokes()
@@ -188,6 +253,9 @@ void IRPaint::draw()
 	gl::setMatricesWindow( getWindowSize() );
 	gl::setViewport( getWindowBounds() );
 
+	gl::color( Color::white() );
+	gl::draw( mBackground, getWindowBounds() );
+
 	gl::enableAdditiveBlending();
 	gl::color( ColorA( 1., .8, .2, .4 ) );
 	glLineWidth( 30 );
@@ -221,6 +289,20 @@ void IRPaint::showAllParams( bool visible )
     }
 
     TwDefine( "TW_HELP visible=false" );
+}
+
+void IRPaint::mouseDown( MouseEvent event )
+{
+	Vec2f pos = Vec2f( event.getPos() ) / Vec2f( getWindowSize() );
+	selectTools( pos );
+}
+
+void IRPaint::mouseDrag( MouseEvent event )
+{
+}
+
+void IRPaint::mouseUp( MouseEvent event )
+{
 }
 
 void IRPaint::keyDown( KeyEvent event )
