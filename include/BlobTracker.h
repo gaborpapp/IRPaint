@@ -28,6 +28,7 @@
 #include "cinder/qtime/QuickTime.h"
 
 #include "cinder/Capture.h"
+#include "cinder/Function.h"
 #include "cinder/Rect.h"
 #include "cinder/Vector.h"
 
@@ -56,17 +57,17 @@ class BlobTracker
 		template< typename T >
 		boost::signals2::connection registerBlobsBegan( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::placeholders::_1 ) ) );
+			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsMoved( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::placeholders::_1 ) ) );
+			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsEnded( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::placeholders::_1 ) ) );
+			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
 		}
 		template< typename T >
 		void registerBlobsCallbacks( void( T::*fnBegan )( BlobEvent ),
