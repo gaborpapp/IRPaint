@@ -57,17 +57,29 @@ class BlobTracker
 		template< typename T >
 		boost::signals2::connection registerBlobsBegan( void( T::*fn )( BlobEvent ), T *obj )
 		{
+#if defined( CINDER_MAC )
 			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+#elif defined( CINDER_MSW )
+			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+#endif
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsMoved( void( T::*fn )( BlobEvent ), T *obj )
 		{
+#if defined( CINDER_MAC )
 			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+#elif defined( CINDER_MSW )
+			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+#endif
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsEnded( void( T::*fn )( BlobEvent ), T *obj )
 		{
+#if defined( CINDER_MAC )
 			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::_1 ) ) );
+#elif defined( CINDER_MSW )
+			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+#endif
 		}
 		template< typename T >
 		void registerBlobsCallbacks( void( T::*fnBegan )( BlobEvent ),
