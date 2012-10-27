@@ -19,6 +19,7 @@
 
 #include <vector>
 
+#include <boost/bind.hpp>
 #include <boost/signals2/signal.hpp>
 
 #include "cinder/gl/gl.h"
@@ -57,17 +58,17 @@ class BlobTracker
 		template< typename T >
 		boost::signals2::connection registerBlobsBegan( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsBeganSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+			return mBlobsBeganSig.connect( std::function< BlobCallback >( boost::bind( fn, obj, ::_1 ) ) );
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsMoved( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsMovedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+			return mBlobsMovedSig.connect( std::function< BlobCallback >( boost::bind( fn, obj, ::_1 ) ) );
 		}
 		template< typename T >
 		boost::signals2::connection registerBlobsEnded( void( T::*fn )( BlobEvent ), T *obj )
 		{
-			return mBlobsEndedSig.connect( std::function< BlobCallback >( std::bind( fn, obj, std::tr1::placeholders::_1 ) ) );
+			return mBlobsEndedSig.connect( std::function< BlobCallback >( boost::bind( fn, obj, ::_1 ) ) );
 		}
 		template< typename T >
 		void registerBlobsCallbacks( void( T::*fnBegan )( BlobEvent ),
