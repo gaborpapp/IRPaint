@@ -55,6 +55,8 @@ class BlobEvent
 		//! Returns the previous position of the blob centroid normalized to the image resolution
 		ci::Vec2f getPrevPos() const { return mBlobRef->mPrevCentroid; }
 
+		//! Returns the bounding box of the blob
+		ci::Rectf & getBoundingBox() const { return mBlobRef->mBbox; }
 	private:
 		BlobRef mBlobRef;
 };

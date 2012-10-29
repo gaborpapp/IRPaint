@@ -81,13 +81,14 @@ class IRPaint : public AppBasic
 		void blobsMoved( mndl::BlobEvent event );
 		void blobsEnded( mndl::BlobEvent event );
 
-		void selectTools( const Vec2f &pos );
+		void selectTools( const Vec2f &pos, const Area &area );
 		gl::GlslProg mMixerShader;
 
 		// textures, surfaces
 		gl::Texture mBackground;
 		gl::Texture mAreaStencil;
 		Surface mBrushesMap;
+		Surface mBrushesStencil; //<< area of the brushes for more accurate brush selection
 		Surface mColorsMap;
 
 		gl::Fbo mDrawing;
@@ -97,7 +98,8 @@ class IRPaint : public AppBasic
 
 		ColorA mBrushColor; //<< current brush color
 		int32_t mBrushIndex; //<< current brush index
-		float mBrushThickness[ 6 ]; //< thickness of brushes, index range is 1-5
+#define MAX_BRUSHES 5
+		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
 };
 
 IRPaint::IRPaint() :
@@ -121,7 +123,7 @@ void IRPaint::resize( ResizeEvent event )
 /** Selects color and brush size from the toolbar from the location of \a pos.
  *  Called on blob enter or mouse down.
  *  \param pos position in window coordinates **/
-void IRPaint::selectTools( const Vec2f &pos )
+void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 {
 	Vec2f mapPos = mMapMapping.map( pos );
 	Vec2i mapPosi( (int)mapPos.x, (int)mapPos.y );
@@ -138,6 +140,55 @@ void IRPaint::selectTools( const Vec2f &pos )
 		mBrushIndex = ( brushSelect.r & 0x04 ) |
 					  ( brushSelect.g & 0x02 ) |
 					  ( brushSelect.b & 0x01 );
+	}
+	else
+	if ( mBrushesStencil.getPixel( mapPosi ).a ) // more accurate brush selection
+	{
+		// map area
+		Vec2i ul = area.getUL();
+		Vec2i lr = area.getLR();
+		Vec2f ulM = mMapMapping.map( ul );
+		Vec2f lrM = mMapMapping.map( lr );
+		Area areaMap( (int32_t)ulM.x, (int32_t)ulM.y,
+					  (int32_t)lrM.x, (int32_t)lrM.y );
+
+		// calculate histogram of colors
+		map< uint32_t, int > hist;
+		Surface::Iter iter = mBrushesMap.getIter( areaMap );
+		while ( iter.line() )
+		{
+			while ( iter.pixel() )
+			{
+				uint8_t a = iter.a();
+				uint32_t c = ( iter.r() << 16 ) |
+							 ( iter.g() << 8 ) |
+							 ( iter.b() );
+				if ( a )
+					hist[ c ]++;
+			}
+		}
+		console() << "histogram around " << mapPosi<< " " << area << endl;
+		uint32_t maxColor;
+		int maxCount = 0;
+		for ( map< uint32_t, int >::iterator it = hist.begin();
+				it != hist.end(); ++it )
+		{
+			if ( it->second > maxCount )
+			{
+				maxCount = it->second;
+				maxColor = it->first;
+			}
+			console() << hex << it->first << dec << ": " << it->second << endl;
+		}
+
+		int32_t index = ( ( maxColor >> 16 ) & 0x04 ) |
+						( ( maxColor >> 8 ) & 0x02 ) |
+						( maxColor & 0x01 );
+		console() << index << endl;
+		if ( ( index > 0 ) && ( index <= MAX_BRUSHES ) )
+		{
+			mBrushIndex = index;
+		}
 	}
 }
 
@@ -171,7 +222,19 @@ void IRPaint::blobsBegan( mndl::BlobEvent event )
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
-	selectTools( pos );
+	console() << "pos" << event.getPos() << ": " << pos << endl;
+	// map bounding box
+	Rectf bbox = event.getBoundingBox();
+	console() << "bbox" << bbox << ": ";
+	Vec2f ul = mCalibratorRef->map( bbox.getUpperLeft() );
+	Vec2f lr = mCalibratorRef->map( bbox.getLowerRight() );
+	ul = mCoordMapping.map( ul );
+	lr = mCoordMapping.map( lr );
+	Area area = Area( int32_t( ul.x ), int32_t( ul.y ),
+					  int32_t( lr.x ), int32_t( lr.y ) );
+	console() << area << endl;
+
+	selectTools( pos, area );
 
 	beginStroke( event.getId(), pos );
 }
@@ -270,6 +333,7 @@ void IRPaint::loadImages()
 	mColorsMap = loadImage( loadResource( RES_MAP_COLORS ) );
 	mBrushesMap = loadImage( loadResource( RES_MAP_BRUSHES ) );
 	mAreaStencil = gl::Texture( loadImage( loadResource( RES_AREA_STENCIL ) ) );
+	mBrushesStencil = loadImage( loadResource( RES_BRUSHES_STENCIL ) );
 
 	mMapMapping = RectMapping( getWindowBounds(), mBrushesMap.getBounds() );
 }
@@ -344,8 +408,9 @@ void IRPaint::showAllParams( bool visible )
 
 void IRPaint::mouseDown( MouseEvent event )
 {
-	selectTools( event.getPos() );
-	beginStroke( 1, event.getPos() );
+	Vec2i pos = event.getPos();
+	selectTools( pos, Area( pos - Vec2i( 1, 1 ), pos + Vec2i( 1, 1 ) ) );
+	beginStroke( 1, pos );
 }
 
 void IRPaint::mouseDrag( MouseEvent event )

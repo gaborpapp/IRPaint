@@ -6,6 +6,7 @@
 #define RES_MAP_COLORS CINDER_RESOURCE( ../resources/, gfx/colors.png, 130, PNG )
 #define RES_BACKGROUND CINDER_RESOURCE( ../resources/, gfx/layout.jpg, 131, JPG )
 #define RES_SPLASHSCREEN CINDER_RESOURCE( ../resources/, gfx/splash.jpg, 132, JPG )
+#define RES_BRUSHES_STENCIL CINDER_RESOURCE( ../resources/, gfx/brusharea.png, 138, PNG )
 
 #define RES_PASSTHROUGH_VERT CINDER_RESOURCE( ../resources/, shaders/PassThrough.vert, 133, GLSL )
 #define RES_MIXER_FRAG CINDER_RESOURCE( ../resources/, shaders/Mixer.frag, 134, GLSL )
