@@ -8,5 +8,9 @@
 #define RES_SPLASHSCREEN CINDER_RESOURCE( ../resources/, gfx/splash.jpg, 132, JPG )
 
 #define RES_PASSTHROUGH_VERT CINDER_RESOURCE( ../resources/, shaders/PassThrough.vert, 133, GLSL )
-#define RES_BRUSH_FRAG CINDER_RESOURCE( ../resources/, shaders/Brush.frag, 134, GLSL )
+#define RES_MIXER_FRAG CINDER_RESOURCE( ../resources/, shaders/Mixer.frag, 134, GLSL )
+
+#define RES_STROKE_VERT CINDER_RESOURCE( ../resources/, shaders/Stroke.vert, 135, GLSL )
+#define RES_STROKE_FRAG CINDER_RESOURCE( ../resources/, shaders/Stroke.frag, 136, GLSL )
+#define RES_STROKE_GEOM CINDER_RESOURCE( ../resources/, shaders/Stroke.geom, 137, GLSL )
 

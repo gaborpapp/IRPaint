@@ -15,7 +15,7 @@
  along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <list>
+#include <map>
 #include <vector>
 
 #include "cinder/app/AppBasic.h"
@@ -32,6 +32,7 @@
 
 #include "BlobTracker.h"
 #include "PParams.h"
+#include "Stroke.h"
 #include "Utils.h"
 
 using namespace ci;
@@ -65,15 +66,11 @@ class IRPaint : public AppBasic
 		mndl::BlobTracker mTracker;
 		shared_ptr< mndl::ManualCalibration > mCalibratorRef;
 
-		//void updateStrokes();
-		//void resetStrokes();
+		map< int32_t, Stroke > mStrokes;
 
-		/*
-		typedef list< Vec2f > Stroke;
-		vector< Stroke > mStrokes;
-		size_t mCurrentStrokeIdx;
-		bool mHasBlobs;
-		*/
+		void beginStroke( int32_t id, const Vec2f &pos );
+		void updateStroke( int32_t id, const Vec2f &pos );
+		void endStroke( int32_t id );
 
 		//! Mapping from normalized coordinates to window size
 		RectMapping mCoordMapping;
@@ -85,15 +82,13 @@ class IRPaint : public AppBasic
 		void blobsEnded( mndl::BlobEvent event );
 
 		void selectTools( const Vec2f &pos );
-		void placeBrush( const Vec2f &pos );
-		gl::GlslProg mBrushShader;
+		gl::GlslProg mMixerShader;
 
 		// textures, surfaces
 		gl::Texture mBackground;
 		gl::Texture mAreaStencil;
 		Surface mBrushesMap;
 		Surface mColorsMap;
-		vector< ci::gl::Texture > mBrushes;
 
 		gl::Fbo mDrawing;
 		void clearDrawing();
@@ -101,11 +96,14 @@ class IRPaint : public AppBasic
 		void loadImages();
 
 		ColorA mBrushColor; //<< current brush color
-		uint32_t mBrushIndex; //<< current color index
+		int32_t mBrushIndex; //<< current brush index
+		float mBrushThickness[ 6 ]; //< thickness of brushes, index range is 1-5
 };
 
 IRPaint::IRPaint() :
-	mBrushColor( ColorA::black() ) {}
+	mBrushColor( ColorA::black() ),
+	mBrushIndex( 3 )
+{}
 
 void IRPaint::prepareSettings( Settings *settings )
 {
@@ -143,34 +141,30 @@ void IRPaint::selectTools( const Vec2f &pos )
 	}
 }
 
-/**! Puts paint on the location of \a pos with the current color and brush size.
- * \param pos position in window coordinates **/
-void IRPaint::placeBrush( const Vec2f &pos )
+void IRPaint::beginStroke( int32_t id, const Vec2f &pos )
+{
+	mStrokes[ id ] = Stroke();
+	Vec2f drawingPos = mMapMapping.map( pos );
+	mStrokes[ id ].resize( ResizeEvent( mDrawing.getSize() ) );
+	mStrokes[ id ].setColor( mBrushColor );
+	mStrokes[ id ].setThickness( mBrushThickness[ mBrushIndex ] );
+
+	mStrokes[ id ].update( drawingPos );
+}
+
+void IRPaint::updateStroke( int32_t id, const Vec2f &pos )
 {
 	Vec2f drawingPos = mMapMapping.map( pos );
-
-	mDrawing.bindFramebuffer();
-	gl::setMatricesWindow( mDrawing.getSize(), false );
-	gl::setViewport( mDrawing.getBounds() );
-
-	gl::enable( GL_TEXTURE_2D );
-	gl::enableAlphaBlending();
-	mBrushes[ 0 ].bind( 0 );
-	mAreaStencil.bind( 1 );
-
-	gl::color( Color::white() );
-
-	mBrushShader.bind();
-	mBrushShader.uniform( "color", mBrushColor );
-
-	Vec2i brushRadius = mBrushes[ 0 ].getSize() / 2;
-	gl::drawSolidRect( Rectf( drawingPos - brushRadius, drawingPos + brushRadius ) );
-	mBrushShader.unbind();
-
-	gl::disable( GL_TEXTURE_2D );
-	gl::disableAlphaBlending();
-	mDrawing.unbindFramebuffer();
+	mStrokes[ id ].update( drawingPos );
 }
+
+void IRPaint::endStroke( int32_t id )
+{
+	map< int32_t, Stroke >::iterator it;
+	it = mStrokes.find( id );
+	mStrokes.erase( id );
+}
+
 
 void IRPaint::blobsBegan( mndl::BlobEvent event )
 {
@@ -179,8 +173,7 @@ void IRPaint::blobsBegan( mndl::BlobEvent event )
 
 	selectTools( pos );
 
-	placeBrush( pos );
-	//console() << "blob began " << event.getId() << " " << event.getPos() << endl;
+	beginStroke( event.getId(), pos );
 }
 
 void IRPaint::blobsMoved( mndl::BlobEvent event )
@@ -188,13 +181,12 @@ void IRPaint::blobsMoved( mndl::BlobEvent event )
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
-	placeBrush( pos );
-	//console() << "blob moved " << event.getId() << " " << event.getPos() << endl;
+	updateStroke( event.getId(), pos );
 }
 
 void IRPaint::blobsEnded( mndl::BlobEvent event )
 {
-	//console() << "blob ended " << event.getId() << " " << event.getPos() << endl;
+	endStroke( event.getId() );
 }
 
 void IRPaint::setup()
@@ -221,10 +213,20 @@ void IRPaint::setup()
 	mParams.addParam( "Fps", &mFps, "", true );
 	mParams.addButton( "Reset", std::bind( &IRPaint::clearDrawing, this ), " key=SPACE " );
 
+	mParams.addText( "Brushes" );
+	mParams.addPersistentParam( "1st", &mBrushThickness[ 1 ], 10, " min=1 max=200" );
+	mParams.addPersistentParam( "2nd", &mBrushThickness[ 2 ], 20, " min=1 max=200" );
+	mParams.addPersistentParam( "3rd", &mBrushThickness[ 3 ], 30, " min=1 max=200" );
+	mParams.addPersistentParam( "4th", &mBrushThickness[ 4 ], 50, " min=1 max=200" );
+	mParams.addPersistentParam( "Eraser", &mBrushThickness[ 5 ], 80, " min=1 max=200" );
+	mParams.addText( "Debug" );
+	mParams.addParam( "Brush index", &mBrushIndex, "", true );
+	mParams.addParam( "Brush color", &mBrushColor, "", true );
+
 	try
 	{
-		mBrushShader = gl::GlslProg( loadResource( RES_PASSTHROUGH_VERT ),
-									 loadResource( RES_BRUSH_FRAG ) );
+		mMixerShader = gl::GlslProg( loadResource( RES_PASSTHROUGH_VERT ),
+									 loadResource( RES_MIXER_FRAG ) );
 	}
 	catch ( const std::exception &exc )
 	{
@@ -232,14 +234,14 @@ void IRPaint::setup()
 		quit();
 	}
 
+	mMixerShader.bind();
+	mMixerShader.uniform( "drawing", 0 );
+	mMixerShader.uniform( "stencil", 1 );
+	mMixerShader.unbind();
+
 	loadImages();
 
 	mDrawing = gl::Fbo( mBackground.getWidth(), mBackground.getHeight() );
-	mBrushShader.bind();
-	mBrushShader.uniform( "brush", 0 );
-	mBrushShader.uniform( "stencil", 1 );
-	mBrushShader.uniform( "windowSize", Vec2f( mDrawing.getSize() ) );
-	mBrushShader.unbind();
 	clearDrawing();
 
 	mTracker.setup();
@@ -257,7 +259,7 @@ void IRPaint::setup()
 void IRPaint::clearDrawing()
 {
 	mDrawing.bindFramebuffer();
-	gl::clear( ColorA( 0, 0, 0, 0 ) );
+	gl::clear( ColorA( 1, 1, 1, 0 ) );
 	mDrawing.unbindFramebuffer();
 }
 
@@ -270,8 +272,6 @@ void IRPaint::loadImages()
 	mAreaStencil = gl::Texture( loadImage( loadResource( RES_AREA_STENCIL ) ) );
 
 	mMapMapping = RectMapping( getWindowBounds(), mBrushesMap.getBounds() );
-
-	mBrushes = mndl::loadTextures( "brushes" );
 }
 
 void IRPaint::shutdown()
@@ -290,8 +290,23 @@ void IRPaint::update()
 
 void IRPaint::draw()
 {
-	gl::clear( Color::black() );
+	// draw strokes
+	mDrawing.bindFramebuffer();
+	gl::setMatricesWindow( mDrawing.getSize(), false );
+	gl::setViewport( mDrawing.getBounds() );
 
+	gl::enableAlphaBlending();
+	for ( map< int32_t, Stroke >::iterator it = mStrokes.begin();
+			it != mStrokes.end(); ++it )
+	{
+		it->second.draw();
+	}
+
+	gl::disableAlphaBlending();
+	mDrawing.unbindFramebuffer();
+
+	// draw background and drawing
+	gl::clear( Color::black() );
 	gl::setMatricesWindow( getWindowSize() );
 	gl::setViewport( getWindowBounds() );
 
@@ -301,24 +316,11 @@ void IRPaint::draw()
 	gl::enableAlphaBlending();
 
 	gl::color( ColorA::white() );
-	gl::draw( mDrawing.getTexture(), getWindowBounds() );
-
-	/*
-	gl::enableAdditiveBlending();
-	gl::color( ColorA( 1., .8, .2, .4 ) );
-	glLineWidth( 30 );
-	for ( vector< Stroke >::const_iterator sIt = mStrokes.begin(); sIt != mStrokes.end(); ++sIt )
-	{
-		gl::begin( GL_LINE_STRIP );
-		for ( list< Vec2f >::const_iterator pIt = sIt->begin(); pIt != sIt->end(); ++pIt )
-		{
-			gl::vertex( *pIt );
-		}
-		gl::end();
-	}
-	glLineWidth( 1 );
-	gl::disableAlphaBlending();
-	*/
+	mMixerShader.bind();
+	mDrawing.getTexture().bind();
+	mAreaStencil.bind( 1 );
+	gl::drawSolidRect( getWindowBounds() );
+	mMixerShader.unbind();
 
 	mTracker.draw();
 
@@ -343,16 +345,17 @@ void IRPaint::showAllParams( bool visible )
 void IRPaint::mouseDown( MouseEvent event )
 {
 	selectTools( event.getPos() );
-	placeBrush( event.getPos() );
+	beginStroke( 1, event.getPos() );
 }
 
 void IRPaint::mouseDrag( MouseEvent event )
 {
-	placeBrush( event.getPos() );
+	updateStroke( 1, event.getPos() );
 }
 
 void IRPaint::mouseUp( MouseEvent event )
 {
+	endStroke( 1 );
 }
 
 void IRPaint::keyDown( KeyEvent event )

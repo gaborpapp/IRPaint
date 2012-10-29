@@ -38,8 +38,8 @@ ManualCalibration::ManualCalibration( BlobTracker *bt ) :
 
 	mParams.addButton( "Calibrate", std::bind( &ManualCalibration::toggleCalibrationCB, this ) );
 	mParams.addParam( "Debug", &mIsDebugging );
-	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 2, "min=2 max=16" );
-	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 2, "min=2 max=16" );
+	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 4, "min=2 max=16" );
+	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 3, "min=2 max=16" );
 
 	resetGrid();
 	load();
@@ -187,6 +187,7 @@ void ManualCalibration::draw()
 
 	if ( mIsCalibrating )
 	{
+		gl::clear( Color::black() );
 		float radius = app::getWindowHeight() / ( 2. * mCalibrationGrid.size() );
 		for ( size_t i = 0; i < mCalibrationGrid.size(); i++ )
 		{
