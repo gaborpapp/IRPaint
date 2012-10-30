@@ -47,8 +47,10 @@ class ManualCalibration
 		void load( const ci::fs::path &fname = ci::fs::path() );
 		void save();
 
-		//! Returns point mapped according to calibration grid.
+		//! Returns point \a p mapped according to the calibration grid.
 		ci::Vec2f map( const ci::Vec2f &p );
+
+		bool isCalibrating() const { return mIsCalibrating; }
 
 	private:
 		BlobTracker *mBlobTrackerRef;

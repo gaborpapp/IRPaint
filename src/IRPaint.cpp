@@ -254,6 +254,9 @@ void IRPaint::endStroke( int32_t id )
 
 void IRPaint::blobsBegan( mndl::BlobEvent event )
 {
+	if ( mCalibratorRef->isCalibrating() )
+		return;
+
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
@@ -273,6 +276,9 @@ void IRPaint::blobsBegan( mndl::BlobEvent event )
 
 void IRPaint::blobsMoved( mndl::BlobEvent event )
 {
+	if ( mCalibratorRef->isCalibrating() )
+		return;
+
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
@@ -281,6 +287,9 @@ void IRPaint::blobsMoved( mndl::BlobEvent event )
 
 void IRPaint::blobsEnded( mndl::BlobEvent event )
 {
+	if ( mCalibratorRef->isCalibrating() )
+		return;
+
 	endStroke( event.getId() );
 }
 
