@@ -33,7 +33,7 @@ Stroke::Stroke()
 void Stroke::update( Vec2f point )
 {
 	if ( mPoints.empty() ||
-		 ( point.distanceSquared( mPoints.back() ) > 10.f ) )
+		 ( point.distanceSquared( mPoints.back() ) > 2.f ) )
 		mPoints.push_back( point );
 }
 

@@ -16,8 +16,8 @@
 */
 
 #include "cinder/app/App.h"
-
 #include "cinder/gl/gl.h"
+#include "cinder/CinderMath.h"
 #include "cinder/Utilities.h"
 #include "cinder/Xml.h"
 
@@ -31,7 +31,7 @@ namespace mndl {
 
 ManualCalibration::ManualCalibration( BlobTracker *bt ) :
 	mBlobTrackerRef( bt ), mIsCalibrating( false ),
-	mIsDebugging( false )
+	mIsDebugging( false ), mRejectBlobs( false )
 {
 	mParams = params::PInterfaceGl( "Calibration", Vec2i( 350, 550 ) );
 	mParams.addPersistentSizeAndPosition();
@@ -40,6 +40,9 @@ ManualCalibration::ManualCalibration( BlobTracker *bt ) :
 	mParams.addParam( "Debug", &mIsDebugging );
 	mParams.addPersistentParam( "Grid width", &mCalibrationGridSize.x, 4, "min=2 max=16" );
 	mParams.addPersistentParam( "Grid height", &mCalibrationGridSize.y, 3, "min=2 max=16" );
+
+	mTimelineRef = Timeline::create();
+	app::timeline().add( mTimelineRef );
 
 	resetGrid();
 	load();
@@ -194,7 +197,7 @@ void ManualCalibration::draw()
 			if ( i < mCalibrationGridIndex )
 				gl::color( Color( 0, 1, 0 ) );
 			else
-				if ( i == mCalibrationGridIndex )
+				if ( ( i == mCalibrationGridIndex ) && ( !mRejectBlobs ) )
 					gl::color( Color( 1, .8, .1 ) );
 				else
 					gl::color( Color::gray( .8 ) );
@@ -239,12 +242,17 @@ void ManualCalibration::draw()
 
 void ManualCalibration::blobsBegan( BlobEvent event )
 {
-	if ( ( mLastCalibrationIndexReceived < (int)mCalibrationGridIndex ) &&
+	if ( ( !mRejectBlobs ) &&
+		 ( mLastCalibrationIndexReceived < (int)mCalibrationGridIndex ) &&
 		 ( mCalibrationId != event.getId() ) )
 	{
 		mLastCalibrationIndexReceived = mCalibrationGridIndex;
 		mCalibrationPos = event.getPos();
 		mCalibrationId = event.getId();
+
+		// reject blobs for 1.5 seconds from now on
+		mRejectBlobs = true;
+		mTimelineRef->apply( &mRejectBlobs, false, 1.5f );
 	}
 }
 

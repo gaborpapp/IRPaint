@@ -21,6 +21,7 @@
 
 #include "cinder/Cinder.h"
 #include "cinder/Filesystem.h"
+#include "cinder/Timeline.h"
 #include "cinder/Vector.h"
 
 #include "Blob.h"
@@ -68,6 +69,9 @@ class ManualCalibration
 		int mLastCalibrationIndexReceived; //< last point index calibrated in \a mCalibrationGrid
 		ci::Vec2f mCalibrationPos; //< normalized blob position
 		int32_t mCalibrationId; //< id of the calibration blob
+
+		ci::TimelineRef mTimelineRef; //< timeline for blob rejection
+		ci::Anim< bool > mRejectBlobs; //< reject blobs after receiving a blob for a short time
 
 		void resetGrid();
 
