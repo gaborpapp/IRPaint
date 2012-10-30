@@ -99,6 +99,7 @@ class IRPaint : public AppBasic
 		ColorA mBrushColor; //<< current brush color
 		int32_t mBrushIndex; //<< current brush index
 #define MAX_BRUSHES 5
+#define BRUSH_ERASER 5 // id of the eraser, has to be handled separately
 		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
 };
 
@@ -125,6 +126,13 @@ void IRPaint::resize( ResizeEvent event )
  *  \param pos position in window coordinates **/
 void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 {
+	// remember these for switching after the eraser
+	static ColorA storedBrushColor;
+	static int32_t storedBrushIndex;
+
+	ColorA lastBrushColor = mBrushColor;
+	int32_t lastBrushIndex = mBrushIndex;
+
 	Vec2f mapPos = mMapMapping.map( pos );
 	Vec2i mapPosi( (int)mapPos.x, (int)mapPos.y );
 
@@ -190,6 +198,33 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 			mBrushIndex = index;
 		}
 	}
+
+	// brush or color change
+	if ( ( lastBrushIndex != mBrushIndex ) ||
+		 ( lastBrushColor != mBrushColor ) )
+	{
+		// remember brush/color if switched to eraser
+		if ( ( mBrushIndex == BRUSH_ERASER ) &&
+			 ( lastBrushIndex != BRUSH_ERASER ) )
+		{
+			storedBrushIndex = lastBrushIndex;
+			storedBrushColor = lastBrushColor;
+		}
+
+		// restore brush/color if the last brush was the eraser
+		if ( lastBrushIndex == BRUSH_ERASER )
+		{
+			// brush change - restore color
+			if ( mBrushIndex != BRUSH_ERASER )
+			{
+				mBrushColor = storedBrushColor;
+			}
+			else // color change - restore brush
+			{
+				mBrushIndex = storedBrushIndex;
+			}
+		}
+	}
 }
 
 void IRPaint::beginStroke( int32_t id, const Vec2f &pos )
@@ -222,17 +257,14 @@ void IRPaint::blobsBegan( mndl::BlobEvent event )
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
-	console() << "pos" << event.getPos() << ": " << pos << endl;
 	// map bounding box
 	Rectf bbox = event.getBoundingBox();
-	console() << "bbox" << bbox << ": ";
 	Vec2f ul = mCalibratorRef->map( bbox.getUpperLeft() );
 	Vec2f lr = mCalibratorRef->map( bbox.getLowerRight() );
 	ul = mCoordMapping.map( ul );
 	lr = mCoordMapping.map( lr );
 	Area area = Area( int32_t( ul.x ), int32_t( ul.y ),
 					  int32_t( lr.x ), int32_t( lr.y ) );
-	console() << area << endl;
 
 	selectTools( pos, area );
 
