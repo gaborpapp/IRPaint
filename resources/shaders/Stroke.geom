@@ -2,14 +2,12 @@
 // by Paul Houx
 // https://forum.libcinder.org/topic/smooth-thick-lines-using-geometry-shader#23286000001297067
 
-// This version of the line shader simply cuts off the corners and
-// draws the line with no overdraw on neighboring segments at all
-
 #version 120
 #extension GL_EXT_gpu_shader4 : enable
 #extension GL_EXT_geometry_shader4 : enable
 
 uniform float	THICKNESS;		// the thickness of the line in pixels
+uniform float	MITER_LIMIT;	// 1.0: always miter, -1.0: never miter, 0.75: default
 uniform vec2	WIN_SCALE;		// the size of the viewport in pixels
 
 varying out vec2 gsTexCoord;
@@ -51,65 +49,67 @@ void main(void)
   // determine the length of the miter by projecting it onto normal and then inverse it
   float length_a = THICKNESS / dot(miter_a, n1);
   float length_b = THICKNESS / dot(miter_b, n1);
-
-  if( dot(v0,n1) > 0 ) { 
-    // start at negative miter
-    gsTexCoord = vec2(0, 1);
-    gl_FrontColor = gl_FrontColorIn[1];
-	gl_Position = vec4( (p1 - length_a * miter_a) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// proceed to positive normal
-    gsTexCoord = vec2(0, 0);
-    gl_FrontColor = gl_FrontColorIn[1];
-	gl_Position = vec4( (p1 + THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
- }
- else { 
-    // start at negative normal
-    gsTexCoord = vec2(0, 1);
-    gl_FrontColor = gl_FrontColorIn[1];
-	gl_Position = vec4( (p1 - THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// proceed to positive miter
-    gsTexCoord = vec2(0, 0);
-    gl_FrontColor = gl_FrontColorIn[1];
-	gl_Position = vec4( (p1 + length_a * miter_a) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-  } 
   
-  if( dot(v2,n1) < 0 ) {
-	// proceed to negative miter
-    gsTexCoord = vec2(0, 1);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 - length_b * miter_b) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// proceed to positive normal
-    gsTexCoord = vec2(0, 0);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 + THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// end at positive normal
-    gsTexCoord = vec2(0, 0);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 + THICKNESS * n2) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
+  // prevent excessively long miters at sharp corners
+  if( dot(v0,v1) < -MITER_LIMIT ) {
+	miter_a = n1;
+	length_a = THICKNESS;
+	
+	// close the gap
+	if( dot(v0,n1) > 0 ) {
+		gsTexCoord = vec2(0, 0);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( (p1 + THICKNESS * n0) / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();
+		gsTexCoord = vec2(0, 0);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( (p1 + THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();
+		gsTexCoord = vec2(0, 0.5);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( p1 / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();
+		EndPrimitive();
+	}
+	else {
+		gsTexCoord = vec2(0, 1);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( (p1 - THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();		
+		gsTexCoord = vec2(0, 1);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( (p1 - THICKNESS * n0) / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();
+		gsTexCoord = vec2(0, 0.5);
+		gl_FrontColor = gl_FrontColorIn[1];
+		gl_Position = vec4( p1 / WIN_SCALE, 0.0, 1.0 );
+		EmitVertex();
+		EndPrimitive();
+	}
   }
-  else { 
-    // proceed to negative normal
-    gsTexCoord = vec2(0, 1);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 - THICKNESS * n1) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// proceed to positive miter
-    gsTexCoord = vec2(0, 0);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 + length_b * miter_b) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
-	// end at negative normal
-    gsTexCoord = vec2(0, 1);
-    gl_FrontColor = gl_FrontColorIn[2];
-	gl_Position = vec4( (p2 - THICKNESS * n2) / WIN_SCALE, 0.0, 1.0 );
-	EmitVertex();
+
+  if( dot(v1,v2) < -MITER_LIMIT ) {
+	miter_b = n1;
+	length_b = THICKNESS;
   }
+  
+  // generate the triangle strip
+  gsTexCoord = vec2(0, 0);
+  gl_FrontColor = gl_FrontColorIn[1];
+  gl_Position = vec4( (p1 + length_a * miter_a) / WIN_SCALE, 0.0, 1.0 );
+  EmitVertex();
+  gsTexCoord = vec2(0, 1);
+  gl_FrontColor = gl_FrontColorIn[1];
+  gl_Position = vec4( (p1 - length_a * miter_a) / WIN_SCALE, 0.0, 1.0 );
+  EmitVertex();
+  gsTexCoord = vec2(0, 0);
+  gl_FrontColor = gl_FrontColorIn[2];
+  gl_Position = vec4( (p2 + length_b * miter_b) / WIN_SCALE, 0.0, 1.0 );
+  EmitVertex();
+  gsTexCoord = vec2(0, 1);
+  gl_FrontColor = gl_FrontColorIn[2];
+  gl_Position = vec4( (p2 - length_b * miter_b) / WIN_SCALE, 0.0, 1.0 );
+  EmitVertex();
+
   EndPrimitive();
 }

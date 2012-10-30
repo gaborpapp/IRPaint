@@ -167,7 +167,8 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 					hist[ c ]++;
 			}
 		}
-		console() << "histogram around " << mapPosi<< " " << area << endl;
+
+		// find maximum in histogram
 		uint32_t maxColor;
 		int maxCount = 0;
 		for ( map< uint32_t, int >::iterator it = hist.begin();
@@ -178,13 +179,12 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 				maxCount = it->second;
 				maxColor = it->first;
 			}
-			console() << hex << it->first << dec << ": " << it->second << endl;
 		}
 
+		// calculate the index from the color
 		int32_t index = ( ( maxColor >> 16 ) & 0x04 ) |
 						( ( maxColor >> 8 ) & 0x02 ) |
 						( maxColor & 0x01 );
-		console() << index << endl;
 		if ( ( index > 0 ) && ( index <= MAX_BRUSHES ) )
 		{
 			mBrushIndex = index;
