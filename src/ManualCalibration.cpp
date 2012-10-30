@@ -15,6 +15,8 @@
  along with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <float.h>
+
 #include "cinder/app/App.h"
 #include "cinder/gl/gl.h"
 #include "cinder/CinderMath.h"
@@ -167,6 +169,10 @@ Vec2f ManualCalibration::map( const ci::Vec2f &p )
 {
 	// TODO: optimize this with a lookup table maybe?
 
+	float closestDistance = FLT_MAX;
+	vector< Trianglef >::const_iterator closestIt = mCameraTriangleGrid.begin();
+	vector< Trianglef >::const_iterator closestCit = mTriangleGrid.begin();
+
 	for ( vector< Trianglef >::const_iterator it = mCameraTriangleGrid.begin(),
 			cit = mTriangleGrid.begin();
 			it != mCameraTriangleGrid.end(); ++it, ++cit )
@@ -176,12 +182,20 @@ Vec2f ManualCalibration::map( const ci::Vec2f &p )
 			Vec3f bary = it->toBarycentric( p );
 			return cit->fromBarycentric( bary );
 		}
+
+		float d = it->distanceSquared( p );
+		if ( d < closestDistance )
+		{
+			closestDistance = d;
+			closestIt = it;
+			closestCit = cit;
+		}
 	}
 
 	// point is outside of the grid
-	// map position according to first triangle (any triangle would do it)
-	Vec3f bary = mCameraTriangleGrid[ 0 ].toBarycentric( p );
-	return mTriangleGrid[ 0 ].fromBarycentric( bary );
+	// map position according to closest triangle
+	Vec3f bary = closestIt->toBarycentric( p );
+	return closestCit->fromBarycentric( bary );
 }
 
 void ManualCalibration::draw()
