@@ -345,7 +345,10 @@ void IRPaint::setup()
 
 	loadImages();
 
-	mDrawing = gl::Fbo( mBackground.getWidth(), mBackground.getHeight() );
+	gl::Fbo::Format format;
+	format.enableDepthBuffer( false );
+	format.setSamples( 4 );
+	mDrawing = gl::Fbo( mBackground.getWidth(), mBackground.getHeight(), format );
 	clearDrawing();
 
 	mTracker.setup();
