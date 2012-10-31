@@ -15,6 +15,7 @@
     <ClCompile Include="..\src\IRPaint.cpp" />
     <ClCompile Include="..\src\ManualCalibration.cpp" />
     <ClCompile Include="..\src\PParams.cpp" />
+    <ClCompile Include="..\src\Stroke.cpp" />
     <ClCompile Include="..\src\Triangle.cpp" />
     <ClCompile Include="..\src\Utils.cpp" />
   </ItemGroup>
@@ -24,14 +25,20 @@
     <ClInclude Include="..\include\ManualCalibration.h" />
     <ClInclude Include="..\include\PParams.h" />
     <ClInclude Include="..\include\Resources.h" />
+    <ClInclude Include="..\include\Stroke.h" />
     <ClInclude Include="..\include\Triangle.h" />
     <ClInclude Include="..\include\Utils.h" />
+    <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="..\resources\Resource.rc">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include;$(CINDER_DIR)\include</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include;$(CINDER_DIR)\include</AdditionalIncludeDirectories>
+    <ResourceCompile Include="IRPaintApp.rc" />
+    <ResourceCompile Include="Resource.rc">
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\resources\irpaintapp.ico" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{27257FEF-9BF1-4F0B-9AF5-EB38E9B5E8EF}</ProjectGuid>

@@ -42,6 +42,9 @@ void Stroke::draw()
 	// create a new vector that can contain 3D vertices
 	vector< Vec3f > vertices;
 
+	if ( mPoints.size() < 2 )
+		return;
+
 	// to improve performance, make room for the vertices + 2 adjacency vertices
 	vertices.reserve( mPoints.size() + 2);
 
