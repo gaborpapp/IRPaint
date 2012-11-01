@@ -47,7 +47,7 @@ std::string PInterfaceGl::name2id( const std::string& name ) {
 					id += c;
 					state = APPEND;
 				} else if (isdigit(c)) {
-					id = "_" + c;
+					id = "_" + string( 1, c );
 					state = APPEND;
 				}
 				break;
