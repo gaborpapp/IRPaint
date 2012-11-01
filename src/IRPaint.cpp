@@ -24,6 +24,7 @@
 #include "cinder/gl/GlslProg.h"
 #include "cinder/Cinder.h"
 #include "cinder/Rect.h"
+#include "cinder/Timeline.h"
 #include "cinder/Vector.h"
 
 #include "AntTweakBar.h"
@@ -62,6 +63,9 @@ class IRPaint : public AppBasic
 		params::PInterfaceGl mParams;
 		void showAllParams( bool visible );
 
+		Anim< bool > mDrawSplash; // true if the splash screen should be drawn
+		float mSplashDuration;
+
 		float mFps;
 		mndl::BlobTracker mTracker;
 		shared_ptr< mndl::ManualCalibration > mCalibratorRef;
@@ -87,6 +91,7 @@ class IRPaint : public AppBasic
 		// textures, surfaces
 		gl::Texture mBackground;
 		gl::Texture mAreaStencil;
+		gl::Texture mSplashScreen;
 		Surface mBrushesMap;
 		Surface mBrushesStencil; //<< area of the brushes for more accurate brush selection
 		Surface mColorsMap;
@@ -324,6 +329,7 @@ void IRPaint::setup()
 	mParams.addParam( "Fps", &mFps, "", true );
 	mParams.addButton( "Reset", std::bind( &IRPaint::clearDrawing, this ), "key=SPACE" );
 	mParams.addButton( "Screenshot", std::bind( &IRPaint::saveScreenshot, this ), "key=w" );
+	mParams.addPersistentParam( "Splash duration", &mSplashDuration, 5.f, "min=1 max=30 step=.5" );
 
 	mParams.addText( "Brushes" );
 	mParams.addPersistentParam( "1st", &mBrushThickness[ 1 ], 10, "min=1 max=200" );
@@ -374,6 +380,10 @@ void IRPaint::setup()
 	mScreenshotFolder /= "screenshots";
 	fs::create_directory( mScreenshotFolder );
 
+	// splash screen timer
+	mDrawSplash = true;
+	timeline().apply( &mDrawSplash, false, mSplashDuration );
+
 	setFrameRate( 60 );
 
 	showAllParams( false );
@@ -390,6 +400,7 @@ void IRPaint::loadImages()
 {
 	// all images are the same size (1024x768)
 	mBackground = gl::Texture( loadImage( loadResource( RES_BACKGROUND ) ) );
+	mSplashScreen = gl::Texture( loadImage( loadResource( RES_SPLASHSCREEN ) ) );
 	mColorsMap = loadImage( loadResource( RES_MAP_COLORS ) );
 	mBrushesMap = loadImage( loadResource( RES_MAP_BRUSHES ) );
 	Surface areaStencilSurf = loadImage( loadResource( RES_AREA_STENCIL ) );
@@ -446,6 +457,20 @@ void IRPaint::update()
 
 void IRPaint::draw()
 {
+	if ( mDrawSplash )
+	{
+		// draw background and drawing
+		gl::clear( Color::black() );
+		gl::setMatricesWindow( getWindowSize() );
+		gl::setViewport( getWindowBounds() );
+
+		Area outputArea = Area::proportionalFit( mSplashScreen.getBounds(),
+				getWindowBounds(), true );
+		gl::draw( mSplashScreen, outputArea );
+
+		return;
+	}
+
 	// draw strokes
 	mDrawing.bindFramebuffer();
 	gl::setMatricesWindow( mDrawing.getSize(), false );
