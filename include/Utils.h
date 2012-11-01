@@ -13,4 +13,6 @@ std::string getTimestamp();
 
 std::vector< ci::gl::Texture > loadTextures( const ci::fs::path &relativeDir );
 
+std::string getMinMaxStepString( int min, int max, int step );
+
 } // namespace cinder

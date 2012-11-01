@@ -122,21 +122,19 @@ void BlobTracker::setupGui()
 
 	enumNames = boost::assign::list_of("None")("Original")("Blurred")("Thresholded");
 	mParams.addPersistentParam( "Draw capture", enumNames, &mDrawCapture, 0, "key='c'" );
-
-#if defined( CINDER_MSW )
-	mParams.addText( "Camera settings" );
-#endif
 }
 
 void BlobTracker::update()
 {
 	static int lastCapture = -1;
 	static int lastSource = -1;
+	bool resetParams = false;
 
 	// change gui buttons if switched between capture and playback
 	if ( lastSource != mSource )
 	{
 		setupGui();
+		resetParams = true;
 		lastSource = mSource;
 	}
 
@@ -153,6 +151,8 @@ void BlobTracker::update()
 		// stop and start capture devices
 		if ( lastCapture != mCurrentCapture )
 		{
+			resetParams = true;
+
 			if ( ( lastCapture >= 0 ) && ( mCaptures[ lastCapture ] ) )
 				mCaptures[ lastCapture ].stop();
 
@@ -161,11 +161,9 @@ void BlobTracker::update()
 
 			mCapture = mCaptures[ mCurrentCapture ];
 			lastCapture = mCurrentCapture;
-
-			resetSettingsFilter();
 		}
 
-		checkSettingsFilter();
+		setCameraSettings( resetParams );
 
 		processFrame = mCapture && mCapture.checkNewFrame();
 		inputSurface = mCapture.getSurface();
@@ -585,37 +583,48 @@ void BlobTracker::shutdown()
 		mCapture.stop();
 }
 
-void BlobTracker::resetSettingsFilter()
+void BlobTracker::setCameraSettings( bool reset )
 {
 #if defined( CINDER_MSW )
-	long value, min, max, step, def = 0;
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Brightness           , min, max, step, value, def )) { mBrightnessAct            = mBrightness            = (int)value; mParams.removeParam( "Brightness"            ); mParams.addPersistentParam( "Brightness"           , &mBrightness           , (int)def, getMinMaxStepString( min, max, step )); }
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Contrast             , min, max, step, value, def )) { mContrastAct              = mContrast              = (int)value; mParams.removeParam( "Contrast"              ); mParams.addPersistentParam( "Contrast"             , &mContrast             , (int)def, getMinMaxStepString( min, max, step )); }
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Sharpness            , min, max, step, value, def )) { mSharpnessAct             = mSharpness             = (int)value; mParams.removeParam( "Sharpness"             ); mParams.addPersistentParam( "Sharpness"            , &mSharpness            , (int)def, getMinMaxStepString( min, max, step )); }
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gamma                , min, max, step, value, def )) { mGammaAct                 = mGamma                 = (int)value; mParams.removeParam( "Gamma"                 ); mParams.addPersistentParam( "Gamma"                , &mGamma                , (int)def, getMinMaxStepString( min, max, step )); }
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_BacklightCompensation, min, max, step, value, def )) { mBacklightCompensationAct = mBacklightCompensation = (int)value; mParams.removeParam( "BacklightCompensation" ); mParams.addPersistentParam( "BacklightCompensation", &mBacklightCompensation, (int)def, getMinMaxStepString( min, max, step )); }
-	if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gain                 , min, max, step, value, def )) { mGainAct                  = mGain                  = (int)value; mParams.removeParam( "Gain"                  ); mParams.addPersistentParam( "Gain"                 , &mGain                 , (int)def, getMinMaxStepString( min, max, step )); }
-#endif
-}
+	static int brightness                = -1;
+	static int contrast                  = -1;
+	static int sharpness                 = -1;
+	static int gamma                     = -1;
+	static int backlightCompensation     = -1;
+	static int gain                      = -1;
 
-void BlobTracker::checkSettingsFilter()
-{
-#if defined( CINDER_MSW )
-	long value, min, max, step, def = 0;
-	if( mBrightnessAct            != mBrightness            ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Brightness           , mBrightness            ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Brightness           , min, max, step, value, def )) mBrightnessAct            = mBrightness            = value; }
-	if( mContrastAct              != mContrast              ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Contrast             , mContrast              ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Contrast             , min, max, step, value, def )) mContrastAct              = mContrast              = value; }
-	if( mSharpnessAct             != mSharpness             ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Sharpness            , mSharpness             ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Sharpness            , min, max, step, value, def )) mSharpnessAct             = mSharpness             = value; }
-	if( mGammaAct                 != mGamma                 ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gamma                , mGamma                 ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gamma                , min, max, step, value, def )) mGammaAct                 = mGamma                 = value; }
-	if( mBacklightCompensationAct != mBacklightCompensation ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_BacklightCompensation, mBacklightCompensation ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_BacklightCompensation, min, max, step, value, def )) mBacklightCompensationAct = mBacklightCompensation = value; }
-	if( mGainAct                  != mGain                  ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gain                 , mGain                  ); if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gain                 , min, max, step, value, def )) mGainAct                  = mGain                  = value; }
-#endif
-}
+	static int lastBrightness            = -1;
+	static int lastContrast              = -1;
+	static int lastSharpness             = -1;
+	static int lastGamma                 = -1;
+	static int lastBacklightCompensation = -1;
+	static int lastGain                  = -1;
+	long value = 0, min = 0, max = 0, step = 0, def = 0;
 
-string BlobTracker::getMinMaxStepString( int min, int max, int step )
-{
-	stringstream st;
-	st << "min=" << min << "max=" << max << "step=" << step;
-	return st.str();
+	if ( mSource != SOURCE_CAMERA )
+		return;
+
+	if( reset )
+	{
+		params::PInterfaceGl::save();
+
+		lastBrightness = lastContrast = lastSharpness = lastGamma = lastBacklightCompensation = lastGain = -1;
+
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Brightness           , min, max, step, value, def )) { mParams.removeParam( "Brightness"            ); mParams.addPersistentParam( "Brightness"           , &brightness           , (int)def, getMinMaxStepString( min, max, step )); brightness            = math<int>::max( math<int>::min( brightness           , max ), min ); }
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Contrast             , min, max, step, value, def )) { mParams.removeParam( "Contrast"              ); mParams.addPersistentParam( "Contrast"             , &contrast             , (int)def, getMinMaxStepString( min, max, step )); contrast              = math<int>::max( math<int>::min( contrast             , max ), min ); }
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Sharpness            , min, max, step, value, def )) { mParams.removeParam( "Sharpness"             ); mParams.addPersistentParam( "Sharpness"            , &sharpness            , (int)def, getMinMaxStepString( min, max, step )); sharpness             = math<int>::max( math<int>::min( sharpness            , max ), min ); }
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gamma                , min, max, step, value, def )) { mParams.removeParam( "Gamma"                 ); mParams.addPersistentParam( "Gamma"                , &gamma                , (int)def, getMinMaxStepString( min, max, step )); gamma                 = math<int>::max( math<int>::min( gamma                , max ), min ); }
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_BacklightCompensation, min, max, step, value, def )) { mParams.removeParam( "BacklightCompensation" ); mParams.addPersistentParam( "BacklightCompensation", &backlightCompensation, (int)def, getMinMaxStepString( min, max, step )); backlightCompensation = math<int>::max( math<int>::min( backlightCompensation, max ), min ); }
+		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gain                 , min, max, step, value, def )) { mParams.removeParam( "Gain"                  ); mParams.addPersistentParam( "Gain"                 , &gain                 , (int)def, getMinMaxStepString( min, max, step )); gain                  = math<int>::max( math<int>::min( gain                 , max ), min ); }
+	}
+
+	if( lastBrightness            != brightness            ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Brightness           , brightness            ); lastBrightness            = brightness           ; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Brightness           , min, max, step, value, def )) lastBrightness             = brightness            = value; }
+	if( lastContrast              != contrast              ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Contrast             , contrast              ); lastContrast              = contrast             ; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Contrast             , min, max, step, value, def )) lastContrast               = contrast              = value; }
+	if( lastSharpness             != sharpness             ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Sharpness            , sharpness             ); lastSharpness             = sharpness            ; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Sharpness            , min, max, step, value, def )) lastSharpness              = sharpness             = value; }
+	if( lastGamma                 != gamma                 ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gamma                , gamma                 ); lastGamma                 = gamma                ; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gamma                , min, max, step, value, def )) lastGamma                  = gamma                 = value; }
+	if( lastBacklightCompensation != backlightCompensation ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_BacklightCompensation, backlightCompensation ); lastBacklightCompensation = backlightCompensation; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_BacklightCompensation, min, max, step, value, def )) lastBacklightCompensation  = backlightCompensation = value; }
+	if( lastGain                  != gain                  ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gain                 , gain                  ); lastGain                  = gain                 ; }//if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gain                 , min, max, step, value, def )) lastGain                   = gain                  = value; }
+#endif
 }
 
 } // namspace mndl

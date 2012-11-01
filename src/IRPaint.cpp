@@ -177,7 +177,7 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 		}
 
 		// find maximum in histogram
-		uint32_t maxColor;
+		uint32_t maxColor = 0;
 		int maxCount = 0;
 		for ( map< uint32_t, int >::iterator it = hist.begin();
 				it != hist.end(); ++it )
@@ -188,7 +188,7 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 				maxColor = it->first;
 			}
 		}
-
+		
 		// calculate the index from the color
 		int32_t index = ( ( maxColor >> 16 ) & 0x04 ) |
 						( ( maxColor >> 8 ) & 0x02 ) |

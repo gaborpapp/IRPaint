@@ -105,9 +105,7 @@ class BlobTracker
 		void playVideoCB();
 		void saveVideoCB();
 
-		void resetSettingsFilter();
-		void checkSettingsFilter();
-		std::string getMinMaxStepString( int min, int max, int step );
+		void setCameraSettings( bool reset );
 
 		// capture
 		ci::Capture mCapture;
@@ -142,20 +140,6 @@ class BlobTracker
 		int mBlurSize;
 		float mMinArea;
 		float mMaxArea;
-
-		int mBrightness;
-		int mContrast;
-		int mSharpness;
-		int mGamma;
-		int mBacklightCompensation;
-		int mGain;
-
-		int mBrightnessAct;
-		int mContrastAct;
-		int mSharpnessAct;
-		int mGammaAct;
-		int mBacklightCompensationAct;
-		int mGainAct;
 
 		std::vector< BlobRef > mBlobs;
 		void trackBlobs( std::vector< BlobRef > newBlobs );

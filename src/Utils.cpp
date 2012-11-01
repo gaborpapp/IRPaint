@@ -59,5 +59,12 @@ vector< gl::Texture > loadTextures( const fs::path &relativeDir )
 	return textures;
 }
 
+string getMinMaxStepString( int min, int max, int step )
+{
+	stringstream st;
+	st << "min=" << min << " max=" << max << " step=" << step;
+	return st.str();
+}
+
 } // namespace cinder
 
