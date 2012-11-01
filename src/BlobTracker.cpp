@@ -53,13 +53,13 @@ void BlobTracker::setup()
 		{
             if ( device->checkAvailable() )
 			{
-                mCaptures.push_back( Capture( CAPTURE_WIDTH, CAPTURE_HEIGHT,
+                mCaptures.push_back( CaptureParams( CAPTURE_WIDTH, CAPTURE_HEIGHT,
 							device ) );
 				mDeviceNames.push_back( deviceName );
             }
             else
 			{
-                mCaptures.push_back( Capture() );
+                mCaptures.push_back( CaptureParams() );
 				mDeviceNames.push_back( deviceName + " not available" );
 			}
         }
@@ -73,10 +73,12 @@ void BlobTracker::setup()
 	if ( mDeviceNames.empty() )
 	{
 		mDeviceNames.push_back( "Camera not available" );
-		mCaptures.push_back( Capture() );
+		mCaptures.push_back( CaptureParams() );
 	}
 
 	mCalibratorRef = shared_ptr< ManualCalibration >( new ManualCalibration( this ) );
+
+	CaptureParams::setup();
 
 	mParams = params::PInterfaceGl( "Tracker", Vec2i( 350, 550 ) );
 	mParams.addPersistentSizeAndPosition();
@@ -134,6 +136,7 @@ void BlobTracker::update()
 	if ( lastSource != mSource )
 	{
 		setupGui();
+		CaptureParams::removeParams();
 		resetParams = true;
 		lastSource = mSource;
 	}
@@ -163,7 +166,10 @@ void BlobTracker::update()
 			lastCapture = mCurrentCapture;
 		}
 
-		setCameraSettings( resetParams );
+		if( resetParams )
+			mCapture.buildParams();
+		else
+			mCapture.updateParams();
 
 		processFrame = mCapture && mCapture.checkNewFrame();
 		inputSurface = mCapture.getSurface();
@@ -581,50 +587,6 @@ void BlobTracker::shutdown()
 {
 	if ( mCapture )
 		mCapture.stop();
-}
-
-void BlobTracker::setCameraSettings( bool reset )
-{
-#if defined( CINDER_MSW )
-	static int brightness                = -1;
-	static int contrast                  = -1;
-	static int sharpness                 = -1;
-	static int gamma                     = -1;
-	static int backlightCompensation     = -1;
-	static int gain                      = -1;
-
-	static int lastBrightness            = -1;
-	static int lastContrast              = -1;
-	static int lastSharpness             = -1;
-	static int lastGamma                 = -1;
-	static int lastBacklightCompensation = -1;
-	static int lastGain                  = -1;
-	long value = 0, min = 0, max = 0, step = 0, def = 0;
-
-	if ( mSource != SOURCE_CAMERA )
-		return;
-
-	if( reset )
-	{
-		params::PInterfaceGl::save();
-
-		lastBrightness = lastContrast = lastSharpness = lastGamma = lastBacklightCompensation = lastGain = -1;
-
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Brightness           , min, max, step, value, def )) { mParams.removeParam( "Brightness"            ); mParams.addPersistentParam( "Brightness"           , &brightness           , (int)def, getMinMaxStepString( min, max, step )); brightness            = math<int>::clamp( brightness           , min, max ); }
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Contrast             , min, max, step, value, def )) { mParams.removeParam( "Contrast"              ); mParams.addPersistentParam( "Contrast"             , &contrast             , (int)def, getMinMaxStepString( min, max, step )); contrast              = math<int>::clamp( contrast             , min, max ); }
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Sharpness            , min, max, step, value, def )) { mParams.removeParam( "Sharpness"             ); mParams.addPersistentParam( "Sharpness"            , &sharpness            , (int)def, getMinMaxStepString( min, max, step )); sharpness             = math<int>::clamp( sharpness            , min, max ); }
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gamma                , min, max, step, value, def )) { mParams.removeParam( "Gamma"                 ); mParams.addPersistentParam( "Gamma"                , &gamma                , (int)def, getMinMaxStepString( min, max, step )); gamma                 = math<int>::clamp( gamma                , min, max ); }
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_BacklightCompensation, min, max, step, value, def )) { mParams.removeParam( "BacklightCompensation" ); mParams.addPersistentParam( "BacklightCompensation", &backlightCompensation, (int)def, getMinMaxStepString( min, max, step )); backlightCompensation = math<int>::clamp( backlightCompensation, min, max ); }
-		if( mCapture.getDevice()->getSettingsFilter( Capture::Device::SFT_Gain                 , min, max, step, value, def )) { mParams.removeParam( "Gain"                  ); mParams.addPersistentParam( "Gain"                 , &gain                 , (int)def, getMinMaxStepString( min, max, step )); gain                  = math<int>::clamp( gain                 , min, max ); }
-	}
-
-	if( lastBrightness            != brightness            ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Brightness           , brightness            ); lastBrightness            = brightness           ; }
-	if( lastContrast              != contrast              ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Contrast             , contrast              ); lastContrast              = contrast             ; }
-	if( lastSharpness             != sharpness             ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Sharpness            , sharpness             ); lastSharpness             = sharpness            ; }
-	if( lastGamma                 != gamma                 ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gamma                , gamma                 ); lastGamma                 = gamma                ; }
-	if( lastBacklightCompensation != backlightCompensation ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_BacklightCompensation, backlightCompensation ); lastBacklightCompensation = backlightCompensation; }
-	if( lastGain                  != gain                  ) { mCapture.getDevice()->setSettingsFilter( Capture::Device::SFT_Gain                 , gain                  ); lastGain                  = gain                 ; }
-#endif
 }
 
 } // namspace mndl

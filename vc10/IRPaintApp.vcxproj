@@ -12,6 +12,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\BlobTracker.cpp" />
+    <ClCompile Include="..\src\CaptureParams.cpp" />
     <ClCompile Include="..\src\IRPaint.cpp" />
     <ClCompile Include="..\src\ManualCalibration.cpp" />
     <ClCompile Include="..\src\PParams.cpp" />
@@ -22,6 +23,7 @@
   <ItemGroup>
     <ClInclude Include="..\include\Blob.h" />
     <ClInclude Include="..\include\BlobTracker.h" />
+    <ClInclude Include="..\include\CaptureParams.h" />
     <ClInclude Include="..\include\ManualCalibration.h" />
     <ClInclude Include="..\include\PParams.h" />
     <ClInclude Include="..\include\Resources.h" />

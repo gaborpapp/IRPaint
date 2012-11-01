@@ -28,12 +28,12 @@
 #include "cinder/qtime/MovieWriter.h"
 #include "cinder/qtime/QuickTime.h"
 
-#include "cinder/Capture.h"
 #include "cinder/Function.h"
 #include "cinder/Rect.h"
 #include "cinder/Vector.h"
 
 #include "Blob.h"
+#include "CaptureParams.h"
 #include "ManualCalibration.h"
 #include "PParams.h"
 
@@ -105,16 +105,14 @@ class BlobTracker
 		void playVideoCB();
 		void saveVideoCB();
 
-		void setCameraSettings( bool reset );
-
 		// capture
-		ci::Capture mCapture;
+		mndl::CaptureParams mCapture;
 		ci::gl::Texture mTextureOrig;
 		ci::gl::Texture mTextureBlurred;
 		ci::gl::Texture mTextureThresholded;
 
-		std::vector< ci::Capture > mCaptures;
-		std::vector< std::string > mDeviceNames;
+		std::vector< mndl::CaptureParams > mCaptures;
+		std::vector< std::string         > mDeviceNames;
 
         ci::qtime::MovieSurface mMovie;
 		ci::qtime::MovieWriter mMovieWriter;
@@ -140,6 +138,20 @@ class BlobTracker
 		int mBlurSize;
 		float mMinArea;
 		float mMaxArea;
+
+// 		int mBrightness;
+// 		int mContrast;
+// 		int mSharpness;
+// 		int mGamma;
+// 		int mBacklightCompensation;
+// 		int mGain;
+// 
+// 		int mBrightnessAct;
+// 		int mContrastAct;
+// 		int mSharpnessAct;
+// 		int mGammaAct;
+// 		int mBacklightCompensationAct;
+// 		int mGainAct;
 
 		std::vector< BlobRef > mBlobs;
 		void trackBlobs( std::vector< BlobRef > newBlobs );
