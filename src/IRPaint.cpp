@@ -91,6 +91,7 @@ class IRPaint : public AppBasic
 		Surface mBrushesStencil; //<< area of the brushes for more accurate brush selection
 		Surface mColorsMap;
 
+		Area mDrawingArea; //<< bounding area of the drawing
 		gl::Fbo mDrawing;
 		void clearDrawing();
 
@@ -101,6 +102,12 @@ class IRPaint : public AppBasic
 #define MAX_BRUSHES 5
 #define BRUSH_ERASER 5 // id of the eraser, has to be handled separately
 		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
+
+		// screenshots
+		fs::path mScreenshotFolder;
+		void saveScreenshot();
+		void threadedScreenshot( Surface snapshot );
+		thread mScreenshotThread;
 };
 
 IRPaint::IRPaint() :
@@ -188,7 +195,7 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 				maxColor = it->first;
 			}
 		}
-		
+
 		// calculate the index from the color
 		int32_t index = ( ( maxColor >> 16 ) & 0x04 ) |
 						( ( maxColor >> 8 ) & 0x02 ) |
@@ -315,14 +322,15 @@ void IRPaint::setup()
 	mParams.addPersistentSizeAndPosition();
 
 	mParams.addParam( "Fps", &mFps, "", true );
-	mParams.addButton( "Reset", std::bind( &IRPaint::clearDrawing, this ), " key=SPACE " );
+	mParams.addButton( "Reset", std::bind( &IRPaint::clearDrawing, this ), "key=SPACE" );
+	mParams.addButton( "Screenshot", std::bind( &IRPaint::saveScreenshot, this ), "key=w" );
 
 	mParams.addText( "Brushes" );
-	mParams.addPersistentParam( "1st", &mBrushThickness[ 1 ], 10, " min=1 max=200" );
-	mParams.addPersistentParam( "2nd", &mBrushThickness[ 2 ], 20, " min=1 max=200" );
-	mParams.addPersistentParam( "3rd", &mBrushThickness[ 3 ], 30, " min=1 max=200" );
-	mParams.addPersistentParam( "4th", &mBrushThickness[ 4 ], 50, " min=1 max=200" );
-	mParams.addPersistentParam( "Eraser", &mBrushThickness[ 5 ], 80, " min=1 max=200" );
+	mParams.addPersistentParam( "1st", &mBrushThickness[ 1 ], 10, "min=1 max=200" );
+	mParams.addPersistentParam( "2nd", &mBrushThickness[ 2 ], 20, "min=1 max=200" );
+	mParams.addPersistentParam( "3rd", &mBrushThickness[ 3 ], 30, "min=1 max=200" );
+	mParams.addPersistentParam( "4th", &mBrushThickness[ 4 ], 50, "min=1 max=200" );
+	mParams.addPersistentParam( "Eraser", &mBrushThickness[ 5 ], 80, "min=1 max=200" );
 	mParams.addText( "Debug" );
 	mParams.addParam( "Brush index", &mBrushIndex, "", true );
 	mParams.addParam( "Brush color", &mBrushColor, "", true );
@@ -358,6 +366,14 @@ void IRPaint::setup()
 												&IRPaint::blobsMoved,
 												&IRPaint::blobsEnded, this );
 
+	// screenshots
+	mScreenshotFolder = getAppPath();
+#ifdef CINDER_MAC
+	mScreenshotFolder /= "..";
+#endif
+	mScreenshotFolder /= "screenshots";
+	fs::create_directory( mScreenshotFolder );
+
 	setFrameRate( 60 );
 
 	showAllParams( false );
@@ -376,14 +392,46 @@ void IRPaint::loadImages()
 	mBackground = gl::Texture( loadImage( loadResource( RES_BACKGROUND ) ) );
 	mColorsMap = loadImage( loadResource( RES_MAP_COLORS ) );
 	mBrushesMap = loadImage( loadResource( RES_MAP_BRUSHES ) );
-	mAreaStencil = gl::Texture( loadImage( loadResource( RES_AREA_STENCIL ) ) );
+	Surface areaStencilSurf = loadImage( loadResource( RES_AREA_STENCIL ) );
+	mAreaStencil = gl::Texture( areaStencilSurf );
 	mBrushesStencil = loadImage( loadResource( RES_BRUSHES_STENCIL ) );
 
 	mMapMapping = RectMapping( getWindowBounds(), mBrushesMap.getBounds() );
+
+	// calculate area bounding box for saving drawing
+	Surface::ConstIter it = areaStencilSurf.getIter();
+	// FIXME: does not work with RectT< int >
+	// Undefined symbol: "cinder::RectT<int>::set(int, int, int, int)"?
+	Rectf bounds;
+	bool rectInited = false;
+	while ( it.line() )
+	{
+		while ( it.pixel() )
+		{
+			uint8_t a = it.a();
+			if ( a )
+			{
+				Vec2i p = it.getPos();
+				if ( rectInited )
+				{
+					bounds.include( p );
+				}
+				else
+				{
+					bounds = Rectf( p, p );
+					rectInited = true;
+				}
+			}
+		}
+	}
+	mDrawingArea = Area( bounds );
 }
 
 void IRPaint::shutdown()
 {
+	// wait for screenshot thread to finish
+	mScreenshotThread.join();
+
 	params::PInterfaceGl::save();
 
 	mTracker.shutdown();
@@ -433,6 +481,46 @@ void IRPaint::draw()
 	mTracker.draw();
 
 	params::PInterfaceGl::draw();
+}
+
+void IRPaint::saveScreenshot()
+{
+	// NOTE: slow because GPU->CPU copy
+	Surface snapshot( Surface( mDrawing.getTexture() ).clone( mDrawingArea ) );
+
+	// fill transparent area
+	Surface::Iter it = snapshot.getIter();
+	while ( it.line() )
+	{
+		while ( it.pixel() )
+		{
+			uint8_t a = it.a();
+			it.r() = ( a * it.r() + ( 255 - a ) * 255 ) >> 8;
+			it.g() = ( a * it.g() + ( 255 - a ) * 255 ) >> 8;
+			it.b() = ( a * it.b() + ( 255 - a ) * 255 ) >> 8;
+			it.a() = 255;
+		}
+	}
+
+	mScreenshotThread = thread( &IRPaint::threadedScreenshot, this, snapshot );
+}
+
+void IRPaint::threadedScreenshot( Surface snapshot )
+{
+    string filename = "snap-" + mndl::getTimestamp() + ".png";
+    fs::path pngPath( mScreenshotFolder / fs::path( filename ) );
+
+    try
+    {
+        if ( !pngPath.empty() )
+        {
+            writeImage( pngPath, snapshot );
+        }
+    }
+    catch ( ... )
+    {
+        console() << "unable to save image file " << pngPath << endl;
+    }
 }
 
 // show/hide all bars except help, which is always hidden
