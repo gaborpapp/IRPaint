@@ -112,9 +112,9 @@ class BlobTracker
 		ci::gl::Texture mTextureThresholded;
 
 		std::vector< mndl::CaptureParams > mCaptures;
-		std::vector< std::string         > mDeviceNames;
+		std::vector< std::string > mDeviceNames;
 
-        ci::qtime::MovieSurface mMovie;
+		ci::qtime::MovieSurface mMovie;
 		ci::qtime::MovieWriter mMovieWriter;
 		bool mSavingVideo;
 
@@ -138,20 +138,6 @@ class BlobTracker
 		int mBlurSize;
 		float mMinArea;
 		float mMaxArea;
-
-// 		int mBrightness;
-// 		int mContrast;
-// 		int mSharpness;
-// 		int mGamma;
-// 		int mBacklightCompensation;
-// 		int mGain;
-// 
-// 		int mBrightnessAct;
-// 		int mContrastAct;
-// 		int mSharpnessAct;
-// 		int mGammaAct;
-// 		int mBacklightCompensationAct;
-// 		int mGainAct;
 
 		std::vector< BlobRef > mBlobs;
 		void trackBlobs( std::vector< BlobRef > newBlobs );

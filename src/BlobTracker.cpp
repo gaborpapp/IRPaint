@@ -43,31 +43,31 @@ void BlobTracker::setup()
 	// list out the capture devices
 	vector< Capture::DeviceRef > devices( Capture::getDevices() );
 
-    for ( vector< Capture::DeviceRef >::const_iterator deviceIt = devices.begin();
+	for ( vector< Capture::DeviceRef >::const_iterator deviceIt = devices.begin();
 			deviceIt != devices.end(); ++deviceIt )
 	{
 		Capture::DeviceRef device = *deviceIt;
 		string deviceName = device->getName(); // + " " + device->getUniqueId();
 
-        try
+		try
 		{
-            if ( device->checkAvailable() )
+			if ( device->checkAvailable() )
 			{
-                mCaptures.push_back( CaptureParams( CAPTURE_WIDTH, CAPTURE_HEIGHT,
+				mCaptures.push_back( CaptureParams( CAPTURE_WIDTH, CAPTURE_HEIGHT,
 							device ) );
 				mDeviceNames.push_back( deviceName );
-            }
-            else
+			}
+			else
 			{
-                mCaptures.push_back( CaptureParams() );
+				mCaptures.push_back( CaptureParams() );
 				mDeviceNames.push_back( deviceName + " not available" );
 			}
-        }
-        catch ( CaptureExc & )
+		}
+		catch ( CaptureExc & )
 		{
 			app::console() << "Unable to initialize device: " << device->getName() <<
- endl;
-        }
+				endl;
+		}
 	}
 
 	if ( mDeviceNames.empty() )
@@ -166,7 +166,7 @@ void BlobTracker::update()
 			lastCapture = mCurrentCapture;
 		}
 
-		if( resetParams )
+		if ( resetParams )
 			mCapture.buildParams();
 		else
 			mCapture.updateParams();

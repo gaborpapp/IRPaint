@@ -83,7 +83,7 @@ void CaptureParams::buildParam( Capture::Device::SettingsFilterType settingsType
 void CaptureParams::updateParam( Capture::Device::SettingsFilterType settingsType, int *settingsValue, int *settingsValueLast )
 {
 	if( *settingsValueLast != *settingsValue )
-	{ 
+	{
 		getDevice()->setSettingsFilter( settingsType, *settingsValue );
 		*settingsValueLast = *settingsValue;
 	}
