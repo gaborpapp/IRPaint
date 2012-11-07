@@ -31,6 +31,7 @@
 
 #include "Resources.h"
 
+#include "AppUtils.h"
 #include "BlobTracker.h"
 #include "PParams.h"
 #include "Stroke.h"

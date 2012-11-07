@@ -13,4 +13,4 @@ std::string getTimestamp();
 
 std::vector< ci::gl::Texture > loadTextures( const ci::fs::path &relativeDir );
 
-} // namespace cinder
+} // namespace mndl

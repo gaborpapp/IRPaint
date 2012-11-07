@@ -1,9 +1,9 @@
 env = Environment()
 
 env['APP_TARGET'] = 'IRPaint'
-env['APP_SOURCES'] = ['IRPaint.cpp', 'BlobTracker.cpp', 'CaptureParams.cpp',
-						'ManualCalibration.cpp', 'PParams.cpp', 'Stroke.cpp',
-						'Triangle.cpp', 'Utils.cpp']
+env['APP_SOURCES'] = ['IRPaint.cpp', 'AppUtils.mm', 'BlobTracker.cpp',
+		'CaptureParams.cpp', 'ManualCalibration.cpp', 'PParams.cpp',
+		'Stroke.cpp', 'Triangle.cpp', 'Utils.cpp']
 env['RESOURCES'] = ['gfx/*', 'shaders/*']
 env['DEBUG'] = 0
 
