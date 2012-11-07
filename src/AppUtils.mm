@@ -14,6 +14,7 @@ using namespace ci;
 namespace mndl { namespace app {
 
 #if defined( CINDER_MAC )
+// from https://github.com/fieldOfView/Cinder/commit/a5e3ca25032b8318834042a800c295cc050c7480
 int showMessageBox( const std::string &message, const std::string &title )
 {
     bool wasFullScreen = ci::app::isFullScreen();
