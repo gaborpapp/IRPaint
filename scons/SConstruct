@@ -5,6 +5,7 @@ env['APP_SOURCES'] = ['IRPaint.cpp', 'AppUtils.mm', 'BlobTracker.cpp',
 		'CaptureParams.cpp', 'ManualCalibration.cpp', 'PParams.cpp',
 		'Stroke.cpp', 'Triangle.cpp', 'Utils.cpp']
 env['RESOURCES'] = ['gfx/*', 'shaders/*']
+env['ICON'] = 'icon.icns'
 env['DEBUG'] = 0
 
 # OpenCV
