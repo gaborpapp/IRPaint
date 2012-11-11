@@ -15,3 +15,8 @@
 #define RES_STROKE_FRAG CINDER_RESOURCE( ../resources/, shaders/Stroke.frag, 136, GLSL )
 #define RES_STROKE_GEOM CINDER_RESOURCE( ../resources/, shaders/Stroke.geom, 137, GLSL )
 
+#define RES_MENU_BACKGROUND CINDER_RESOURCE( ../resources/, gfx/menu/background.png, 139, PNG )
+#define RES_MENU_HU_CLEAR_ON CINDER_RESOURCE( ../resources/, gfx/menu/hu_clear_on.png, 140, PNG )
+#define RES_MENU_HU_CLEAR_OFF CINDER_RESOURCE( ../resources/, gfx/menu/hu_clear_off.png, 141, PNG )
+#define RES_MENU_HU_SAVE_ON CINDER_RESOURCE( ../resources/, gfx/menu/hu_save_on.png, 142, PNG )
+#define RES_MENU_HU_SAVE_OFF CINDER_RESOURCE( ../resources/, gfx/menu/hu_save_off.png, 143, PNG )

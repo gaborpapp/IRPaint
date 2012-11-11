@@ -36,6 +36,7 @@
 #include "PParams.h"
 #include "Stroke.h"
 #include "Utils.h"
+#include "TextureMenu.h"
 
 using namespace ci;
 using namespace ci::app;
@@ -108,6 +109,9 @@ class IRPaint : public AppBasic
 #define MAX_BRUSHES 5
 #define BRUSH_ERASER 5 // id of the eraser, has to be handled separately
 		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
+
+		void setupMenu();
+		mndl::gl::TextureMenu mMenu;
 
 		// screenshots
 		fs::path mScreenshotFolder;
@@ -359,6 +363,7 @@ void IRPaint::setup()
 	mMixerShader.unbind();
 
 	loadImages();
+	setupMenu();
 
 	gl::Fbo::Format format;
 	format.enableDepthBuffer( false );
@@ -420,8 +425,7 @@ void IRPaint::loadImages()
 	{
 		while ( it.pixel() )
 		{
-			uint8_t a = it.a();
-			if ( a )
+			if ( it.a() )
 			{
 				Vec2i p = it.getPos();
 				if ( rectInited )
@@ -437,6 +441,17 @@ void IRPaint::loadImages()
 		}
 	}
 	mDrawingArea = Area( bounds );
+}
+
+void IRPaint::setupMenu()
+{
+	mMenu = mndl::gl::TextureMenu( loadImage( loadResource( RES_MENU_BACKGROUND ) ) );
+	mMenu.addButton( loadImage( loadResource( RES_MENU_HU_SAVE_ON ) ),
+			loadImage( loadResource( RES_MENU_HU_SAVE_OFF ) ),
+			&IRPaint::saveScreenshot, this );
+	mMenu.addButton( loadImage( loadResource( RES_MENU_HU_CLEAR_ON ) ),
+			loadImage( loadResource( RES_MENU_HU_CLEAR_OFF ) ),
+			&IRPaint::clearDrawing, this );
 }
 
 void IRPaint::shutdown()
