@@ -2,6 +2,7 @@
 
 #include <vector>
 
+#include "cinder/Timeline.h"
 #include "cinder/Cinder.h"
 
 #include <boost/bind.hpp>
@@ -44,7 +45,7 @@ class TextureMenu
 			ci::gl::Texture mTextureOn;
 			ci::gl::Texture mTextureOff;
 			ci::Area mArea;
-			bool mIsOn;
+			ci::Anim< bool > mIsOn;
 
 			ButtonSignal mSignal;
 		};

@@ -1,3 +1,4 @@
+#include "cinder/app/App.h"
 #include "cinder/gl/gl.h"
 
 #include "TextureMenu.h"
@@ -81,7 +82,10 @@ void TextureMenu::processClick( const ci::Vec2i &pos )
 		(*it)->mIsOn = (*it)->mArea.contains( p );
 
 		if ( (*it)->mIsOn )
+		{
 			(*it)->mSignal();
+			app::timeline().apply( &(*it)->mIsOn, false, .5f );
+		}
 	}
 }
 

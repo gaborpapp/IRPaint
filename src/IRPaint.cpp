@@ -108,6 +108,7 @@ class IRPaint : public AppBasic
 		int32_t mBrushIndex; //<< current brush index
 #define MAX_BRUSHES 5
 #define BRUSH_ERASER 5 // id of the eraser, has to be handled separately
+#define MENU_ID 7 // id of the menu on the brush map
 		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
 
 		void setupMenu();
@@ -136,6 +137,7 @@ void IRPaint::resize( ResizeEvent event )
 			Rectf( Vec2f( 0, 0 ), event.getSize() ) );
 	mMapMapping = RectMapping( Rectf( Vec2f::zero(), event.getSize() ),
 							   mBrushesMap.getBounds() );
+	mMenu.setPosition( ( event.getSize() - mMenu.getSize() ) / 2 );
 }
 
 /** Selects color and brush size from the toolbar from the location of \a pos.
@@ -162,9 +164,19 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 	ColorA8u brushSelect = mBrushesMap.getPixel( mapPosi );
 	if ( brushSelect.a )
 	{
-		mBrushIndex = ( brushSelect.r & 0x04 ) |
-					  ( brushSelect.g & 0x02 ) |
-					  ( brushSelect.b & 0x01 );
+		int32_t index = ( brushSelect.r & 0x04 ) |
+					    ( brushSelect.g & 0x02 ) |
+					    ( brushSelect.b & 0x01 );
+		if ( ( index > 0 ) && ( index <= MAX_BRUSHES ) )
+		{
+			mBrushIndex = index;
+		}
+		else
+		if ( index == MENU_ID )
+		{
+			// show/hide menu
+			mMenu.show( !mMenu.isVisible() );
+		}
 	}
 	else
 	if ( mBrushesStencil.getPixel( mapPosi ).a ) // more accurate brush selection
@@ -288,7 +300,10 @@ void IRPaint::blobsBegan( mndl::BlobEvent event )
 
 	selectTools( pos, area );
 
-	beginStroke( event.getId(), pos );
+	if ( mMenu.isVisible() )
+		mMenu.processClick( pos );
+	else
+		beginStroke( event.getId(), pos );
 }
 
 void IRPaint::blobsMoved( mndl::BlobEvent event )
@@ -299,7 +314,8 @@ void IRPaint::blobsMoved( mndl::BlobEvent event )
 	Vec2f pos = mCalibratorRef->map( event.getPos() );
 	pos = mCoordMapping.map( pos );
 
-	updateStroke( event.getId(), pos );
+	if ( !mMenu.isVisible() )
+		updateStroke( event.getId(), pos );
 }
 
 void IRPaint::blobsEnded( mndl::BlobEvent event )
@@ -307,7 +323,8 @@ void IRPaint::blobsEnded( mndl::BlobEvent event )
 	if ( mCalibratorRef->isCalibrating() )
 		return;
 
-	endStroke( event.getId() );
+	if ( !mMenu.isVisible() )
+		endStroke( event.getId() );
 }
 
 void IRPaint::setup()
@@ -400,6 +417,11 @@ void IRPaint::clearDrawing()
 	mDrawing.bindFramebuffer();
 	gl::clear( ColorA( 1, 1, 1, 0 ) );
 	mDrawing.unbindFramebuffer();
+
+	mStrokes.clear();
+
+	// hide the menu
+	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
 }
 
 void IRPaint::loadImages()
@@ -452,6 +474,7 @@ void IRPaint::setupMenu()
 	mMenu.addButton( loadImage( loadResource( RES_MENU_HU_CLEAR_ON ) ),
 			loadImage( loadResource( RES_MENU_HU_CLEAR_OFF ) ),
 			&IRPaint::clearDrawing, this );
+	mMenu.hide();
 }
 
 void IRPaint::shutdown()
@@ -519,6 +542,8 @@ void IRPaint::draw()
 	gl::drawSolidRect( getWindowBounds() );
 	mMixerShader.unbind();
 
+	mMenu.draw();
+
 	mTracker.draw();
 
 	params::PInterfaceGl::draw();
@@ -544,6 +569,9 @@ void IRPaint::saveScreenshot()
 	}
 
 	mScreenshotThread = thread( &IRPaint::threadedScreenshot, this, snapshot );
+
+	// hide the menu
+	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
 }
 
 void IRPaint::threadedScreenshot( Surface snapshot )
@@ -582,18 +610,24 @@ void IRPaint::showAllParams( bool visible )
 void IRPaint::mouseDown( MouseEvent event )
 {
 	Vec2i pos = event.getPos();
+	if ( mMenu.isVisible() )
+		mMenu.processClick( pos );
+	else
+		beginStroke( 1, pos );
+
 	selectTools( pos, Area( pos - Vec2i( 1, 1 ), pos + Vec2i( 1, 1 ) ) );
-	beginStroke( 1, pos );
 }
 
 void IRPaint::mouseDrag( MouseEvent event )
 {
-	updateStroke( 1, event.getPos() );
+	if ( !mMenu.isVisible() )
+		updateStroke( 1, event.getPos() );
 }
 
 void IRPaint::mouseUp( MouseEvent event )
 {
-	endStroke( 1 );
+	if ( !mMenu.isVisible() )
+		endStroke( 1 );
 }
 
 void IRPaint::keyDown( KeyEvent event )
