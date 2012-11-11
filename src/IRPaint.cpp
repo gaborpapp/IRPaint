@@ -38,6 +38,10 @@
 #include "Utils.h"
 #include "TextureMenu.h"
 
+#if defined( CINDER_MSW )
+#include "resource.h"
+#endif
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -329,6 +333,10 @@ void IRPaint::blobsEnded( mndl::BlobEvent event )
 
 void IRPaint::setup()
 {
+#if defined( CINDER_MSW )
+	setIcon( IDI_ICON1 );
+#endif
+
 	gl::disableVerticalSync();
 
 	// params
