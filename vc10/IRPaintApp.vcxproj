@@ -11,10 +11,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-Curl\src\Curl.cpp" />
+    <ClCompile Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-OpenSSL\src\Crypter.cpp" />
     <ClCompile Include="..\src\AppUtils.cpp" />
     <ClCompile Include="..\src\BlobTracker.cpp" />
     <ClCompile Include="..\src\CaptureParams.cpp" />
     <ClCompile Include="..\src\IRPaint.cpp" />
+    <ClCompile Include="..\src\License.cpp" />
     <ClCompile Include="..\src\ManualCalibration.cpp" />
     <ClCompile Include="..\src\PParams.cpp" />
     <ClCompile Include="..\src\Stroke.cpp" />
@@ -23,10 +26,13 @@
     <ClCompile Include="..\src\Utils.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-Curl\src\Curl.h" />
+    <ClInclude Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-OpenSSL\src\Crypter.h" />
     <ClInclude Include="..\include\AppUtils.h" />
     <ClInclude Include="..\include\Blob.h" />
     <ClInclude Include="..\include\BlobTracker.h" />
     <ClInclude Include="..\include\CaptureParams.h" />
+    <ClInclude Include="..\include\License.h" />
     <ClInclude Include="..\include\ManualCalibration.h" />
     <ClInclude Include="..\include\PParams.h" />
     <ClInclude Include="..\include\Resources.h" />
@@ -83,8 +89,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;$(CINDER_DIR)\blocks\Cinder-Curl\src;$(CINDER_DIR)\blocks\Cinder-OpenSSL\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CURL_STATICLIB;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MinimalRebuild>true</MinimalRebuild>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -94,8 +100,8 @@
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cinder_d.lib;opencv_core230d.lib;opencv_imgproc230d.lib;QTMLClient.lib;CVClient.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(CINDER_DIR)\lib;$(CINDER_DIR)\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenCV\lib\vc10;$(QUICKTIME_DIR)\Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cinder_d.lib;opencv_core230d.lib;opencv_imgproc230d.lib;QTMLClient.lib;CVClient.lib;libcurld.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CINDER_DIR)\lib;$(CINDER_DIR)\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenCV\lib\vc10;$(QUICKTIME_DIR)\Libraries;$(CINDER_DIR)\blocks\Cinder-Curl\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenSSL\lib\msw;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
@@ -107,8 +113,8 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;$(CINDER_DIR)\blocks\Cinder-Curl\src;$(CINDER_DIR)\blocks\Cinder-OpenSSL\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>CURL_STATICLIB;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <PrecompiledHeader>
       </PrecompiledHeader>
@@ -116,8 +122,8 @@
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
-      <AdditionalDependencies>cinder.lib;opencv_core230.lib;opencv_imgproc230.lib;QTMLClient.lib;CVClient.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(CINDER_DIR)\lib;$(CINDER_DIR)\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenCV\lib\vc10;$(QUICKTIME_DIR)\Libraries;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>cinder.lib;opencv_core230.lib;opencv_imgproc230.lib;QTMLClient.lib;CVClient.lib;libcurl.lib;libeay32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(CINDER_DIR)\lib;$(CINDER_DIR)\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenCV\lib\vc10;$(QUICKTIME_DIR)\Libraries;$(CINDER_DIR)\blocks\Cinder-Curl\lib\msw;$(CINDER_DIR)\blocks\Cinder-OpenSSL\lib\msw;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <OptimizeReferences>true</OptimizeReferences>

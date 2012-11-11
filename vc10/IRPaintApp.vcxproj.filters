@@ -13,6 +13,15 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav</Extensions>
     </Filter>
+    <Filter Include="blocks">
+      <UniqueIdentifier>{96bf864c-8fa6-420a-9902-4ea8556ee9e2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="blocks\Cinder-Curl">
+      <UniqueIdentifier>{36aed0dc-b9a4-4844-83c1-ee214dce4b2e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="blocks\Cinder-OpenSSL">
+      <UniqueIdentifier>{fc084a70-e316-4213-b311-3d8a6cfd5e90}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\BlobTracker.cpp">
@@ -44,6 +53,15 @@
     </ClCompile>
     <ClCompile Include="..\src\TextureMenu.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\License.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-Curl\src\Curl.cpp">
+      <Filter>blocks\Cinder-Curl</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-OpenSSL\src\Crypter.cpp">
+      <Filter>blocks\Cinder-OpenSSL</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +100,15 @@
     </ClInclude>
     <ClInclude Include="..\include\TextureMenu.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\License.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-Curl\src\Curl.h">
+      <Filter>blocks\Cinder-Curl</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Program Files (x86)\cinder_0.8.4\blocks\Cinder-OpenSSL\src\Crypter.h">
+      <Filter>blocks\Cinder-OpenSSL</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

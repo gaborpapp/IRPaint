@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<!-- ====================================================================== -->
+<!--  License data -->
+<!-- ====================================================================== -->
+<License
+  Product   = "IRPaint"
+  Key       = "public.pem">
+  <Server
+    Name    = "http://www.mndl.hu/lcnc/licensehandler.php">
+  </Server>  
+</License>

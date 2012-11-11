@@ -37,6 +37,7 @@
 #include "Stroke.h"
 #include "Utils.h"
 #include "TextureMenu.h"
+#include "License.h"
 
 #if defined( CINDER_MSW )
 #include "resource.h"
@@ -336,6 +337,24 @@ void IRPaint::setup()
 #if defined( CINDER_MSW )
 	setIcon( IDI_ICON1 );
 #endif
+
+	fs::path licenseXml( getAssetPath( "license.xml" ));
+	if( ! licenseXml.empty())
+	{
+		mndl::license::License license;
+		license.init( licenseXml );
+
+		if( ! license.process())
+		{
+			mndl::app::showMessageBox( "License process failed!", "License problem" );
+			quit();
+		}
+	}
+	else
+	{
+		mndl::app::showMessageBox( "License cannot be initialized!", "License problem" );
+		quit();
+	}
 
 	gl::disableVerticalSync();
 
