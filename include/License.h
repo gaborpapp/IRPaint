@@ -23,9 +23,13 @@ class License
 
 public:
 	void                init( ci::fs::path &xmlData );
+	void                init( ci::XmlTree &doc );
 
-	void                setKey( const ci::fs::path &publicKey );
-	const ci::fs::path &getKey() const;
+	void                setKeyPath( const ci::fs::path &publicKeyPath );
+	const ci::fs::path &getKeyPath() const;
+
+	void                setKey( const std::string &publicKey );
+	const std::string  &getKey() const;
 
 	void                setProduct( const std::string &product );
 	const std::string  &getProduct() const;
@@ -48,7 +52,8 @@ protected:
 	std::string getMac();
 
 protected:
-	ci::fs::path             mPublicKey;
+	ci::fs::path             mPublicKeyPath;
+	std::string              mPublicKey;
 	std::string              mProduct;
 	std::vector<std::string> mServers;
 	Values                   mResult;

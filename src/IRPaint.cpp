@@ -108,6 +108,7 @@ class IRPaint : public AppBasic
 		void clearDrawing();
 
 		void loadImages();
+		bool checkLicense();
 
 		ColorA mBrushColor; //<< current brush color
 		int32_t mBrushIndex; //<< current brush index
@@ -338,21 +339,8 @@ void IRPaint::setup()
 	setIcon( IDI_ICON1 );
 #endif
 
-	fs::path licenseXml( getAssetPath( "license.xml" ));
-	if( ! licenseXml.empty())
+	if( ! checkLicense())
 	{
-		mndl::license::License license;
-		license.init( licenseXml );
-
-		if( ! license.process())
-		{
-			mndl::app::showMessageBox( "License process failed!", "License problem" );
-			quit();
-		}
-	}
-	else
-	{
-		mndl::app::showMessageBox( "License cannot be initialized!", "License problem" );
 		quit();
 	}
 
@@ -699,6 +687,24 @@ void IRPaint::keyDown( KeyEvent event )
 		default:
 			break;
 	}
+}
+
+bool IRPaint::checkLicense()
+{
+	char *publicKey = (char*)loadResource( LICENSE_KEY )->getBuffer().getData();
+	XmlTree doc     = XmlTree( loadResource( LICENSE_XML ));
+
+	mndl::license::License license;
+	license.init( doc );
+	license.setKey( publicKey );
+
+	if( ! license.process())
+	{
+		mndl::app::showMessageBox( "License process failed!", "License problem" );
+		return false;
+	}
+
+	return true;
 }
 
 //CINDER_APP_BASIC( IRPaint, RendererGl( RendererGl::AA_NONE ) )

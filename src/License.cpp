@@ -30,6 +30,11 @@ void License::init( ci::fs::path &xmlData )
 {
 	XmlTree doc( loadFile( xmlData ));
 
+	init( doc );
+}
+
+void License::init( XmlTree &doc )
+{
 	if( doc.hasChild( "License" ))
 	{
 		XmlTree xmlLicense = doc.getChild( "License" );
@@ -38,7 +43,7 @@ void License::init( ci::fs::path &xmlData )
 		string key     = xmlLicense.getAttributeValue<string>( "Key"    , ""  );
 
 		setProduct( product );
-		setKey( getAssetPath( key ));
+		setKeyPath( getAssetPath( key ));
 
 		for( XmlTree::Iter child = xmlLicense.begin(); child != xmlLicense.end(); ++child )
 		{
@@ -51,12 +56,22 @@ void License::init( ci::fs::path &xmlData )
 	}
 }
 
-void License::setKey( const fs::path &publicKey )
+void License::setKeyPath( const fs::path &publicKeyPath )
+{
+	mPublicKeyPath = publicKeyPath;
+}
+
+const fs::path &License::getKeyPath() const
+{
+	return mPublicKeyPath;
+}
+
+void License::setKey( const std::string &publicKey )
 {
 	mPublicKey = publicKey;
 }
 
-const fs::path &License::getKey() const
+const std::string &License::getKey() const
 {
 	return mPublicKey;
 }
@@ -93,7 +108,7 @@ const string License::getServer( int pos ) const
 bool License::process()
 {
 	if( getServerCount() == 0
-	 || getKey().empty()
+	 || ( getKeyPath().empty() && getKey().empty())
 	 || getProduct().empty())
 		return false;
 
@@ -110,7 +125,10 @@ bool License::process()
 //	addValue( value, MAC   , getMac());
 
 	values2String( value, data );
-	dataEncrypt = Crypter::rsaPublicEncrypt( getKey(), data );
+	if( ! getKey().empty())
+		dataEncrypt = Crypter::rsaPublicEncrypt( getKey(), data );
+	else
+		dataEncrypt = Crypter::rsaPublicEncrypt( getKeyPath(), data );
 
 	valueSend.push_back( getProduct());
 	valueSend.push_back( dataEncrypt );
@@ -121,7 +139,10 @@ bool License::process()
 
 		if( ! ret.empty())
 		{
-			dataDecrypt = Crypter::rsaPublicDencrypt( getKey(), ret );
+			if( ! getKey().empty())
+				dataDecrypt = Crypter::rsaPublicDencrypt( getKey(), ret );
+			else
+				dataDecrypt = Crypter::rsaPublicDencrypt( getKeyPath(), ret );
 
 			if( ! dataDecrypt.empty())
 				break;

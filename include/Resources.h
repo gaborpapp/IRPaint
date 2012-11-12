@@ -20,3 +20,6 @@
 #define RES_MENU_HU_CLEAR_OFF CINDER_RESOURCE( ../resources/, gfx/menu/hu_clear_off.png, 141, PNG )
 #define RES_MENU_HU_SAVE_ON CINDER_RESOURCE( ../resources/, gfx/menu/hu_save_on.png, 142, PNG )
 #define RES_MENU_HU_SAVE_OFF CINDER_RESOURCE( ../resources/, gfx/menu/hu_save_off.png, 143, PNG )
+
+#define LICENSE_XML CINDER_RESOURCE( ../resources/, license/license.xml, 144, XML )
+#define LICENSE_KEY CINDER_RESOURCE( ../resources/, license/public.pem, 145, PEM )
