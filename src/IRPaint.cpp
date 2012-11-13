@@ -102,6 +102,7 @@ class IRPaint : public AppBasic
 		Surface mBrushesMap;
 		Surface mBrushesStencil; //<< area of the brushes for more accurate brush selection
 		Surface mColorsMap;
+		Surface mColorPalette; //<< list of colors
 
 		Area mDrawingArea; //<< bounding area of the drawing
 		gl::Fbo mDrawing;
@@ -112,10 +113,11 @@ class IRPaint : public AppBasic
 
 		ColorA mBrushColor; //<< current brush color
 		int32_t mBrushIndex; //<< current brush index
+		int32_t mColorIndex; //<< current color index
 #define MAX_BRUSHES 5
-#define BRUSH_ERASER 5 // id of the eraser, has to be handled separately
-#define MENU_ID 7 // id of the menu on the brush map
-		float mBrushThickness[ MAX_BRUSHES + 1 ]; //< thickness of brushes, index range is 1-5
+#define BRUSH_ERASER 4 // id of the eraser, has to be handled separately
+#define MENU_ID 5 // id of the menu on the brush map
+		float mBrushThickness[ MAX_BRUSHES ]; //< thickness of brushes, index range is 0-4
 
 		void setupMenu();
 		mndl::gl::TextureMenu mMenu;
@@ -129,7 +131,8 @@ class IRPaint : public AppBasic
 
 IRPaint::IRPaint() :
 	mBrushColor( ColorA::black() ),
-	mBrushIndex( 3 )
+	mBrushIndex( 2 ),
+	mColorIndex( 7 )
 {}
 
 void IRPaint::prepareSettings( Settings *settings )
@@ -152,11 +155,11 @@ void IRPaint::resize( ResizeEvent event )
 void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 {
 	// remember these for switching after the eraser
-	static ColorA storedBrushColor;
 	static int32_t storedBrushIndex;
+	static int32_t storedColorIndex;
 
-	ColorA lastBrushColor = mBrushColor;
 	int32_t lastBrushIndex = mBrushIndex;
+	int32_t lastColorIndex = mColorIndex;
 
 	Vec2f mapPos = mMapMapping.map( pos );
 	Vec2i mapPosi( (int)mapPos.x, (int)mapPos.y );
@@ -164,16 +167,19 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 	ColorA8u colorSelect = mColorsMap.getPixel( mapPosi );
 	if ( colorSelect.a )
 	{
-		mBrushColor = colorSelect;
+		int32_t index = colorSelect.b;
+		if ( index < mColorPalette.getWidth() )
+		{
+			mColorIndex = colorSelect.b;
+			mBrushColor = mColorPalette.getPixel( Vec2i( mColorIndex, 0 ) );
+		}
 	}
 
 	ColorA8u brushSelect = mBrushesMap.getPixel( mapPosi );
 	if ( brushSelect.a )
 	{
-		int32_t index = ( brushSelect.r & 0x04 ) |
-					    ( brushSelect.g & 0x02 ) |
-					    ( brushSelect.b & 0x01 );
-		if ( ( index > 0 ) && ( index <= MAX_BRUSHES ) )
+		int32_t index = brushSelect.b;
+		if ( index < MAX_BRUSHES )
 		{
 			mBrushIndex = index;
 		}
@@ -195,40 +201,36 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 		Area areaMap( (int32_t)ulM.x, (int32_t)ulM.y,
 					  (int32_t)lrM.x, (int32_t)lrM.y );
 
-		// calculate histogram of colors
-		map< uint32_t, int > hist;
+		// calculate histogram of brush indices
+		map< int32_t, int > hist;
 		Surface::Iter iter = mBrushesMap.getIter( areaMap );
 		while ( iter.line() )
 		{
 			while ( iter.pixel() )
 			{
 				uint8_t a = iter.a();
-				uint32_t c = ( iter.r() << 16 ) |
-							 ( iter.g() << 8 ) |
-							 ( iter.b() );
+				int32_t c = iter.b();
 				if ( a )
 					hist[ c ]++;
 			}
 		}
 
 		// find maximum in histogram
-		uint32_t maxColor = 0;
+		int32_t maxBrushIndex = 0;
 		int maxCount = 0;
-		for ( map< uint32_t, int >::iterator it = hist.begin();
+		for ( map< int32_t, int >::iterator it = hist.begin();
 				it != hist.end(); ++it )
 		{
 			if ( it->second > maxCount )
 			{
 				maxCount = it->second;
-				maxColor = it->first;
+				maxBrushIndex = it->first;
 			}
 		}
 
 		// calculate the index from the color
-		int32_t index = ( ( maxColor >> 16 ) & 0x04 ) |
-						( ( maxColor >> 8 ) & 0x02 ) |
-						( maxColor & 0x01 );
-		if ( ( index > 0 ) && ( index <= MAX_BRUSHES ) )
+		int32_t index = maxBrushIndex;
+		if ( index < MAX_BRUSHES )
 		{
 			mBrushIndex = index;
 		}
@@ -236,14 +238,14 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 
 	// brush or color change
 	if ( ( lastBrushIndex != mBrushIndex ) ||
-		 ( lastBrushColor != mBrushColor ) )
+		 ( lastColorIndex != mColorIndex ) )
 	{
 		// remember brush/color if switched to eraser
 		if ( ( mBrushIndex == BRUSH_ERASER ) &&
 			 ( lastBrushIndex != BRUSH_ERASER ) )
 		{
 			storedBrushIndex = lastBrushIndex;
-			storedBrushColor = lastBrushColor;
+			storedColorIndex = lastColorIndex;
 		}
 
 		// restore brush/color if the last brush was the eraser
@@ -252,7 +254,8 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 			// brush change - restore color
 			if ( mBrushIndex != BRUSH_ERASER )
 			{
-				mBrushColor = storedBrushColor;
+				mColorIndex = storedColorIndex;
+				mBrushColor = mColorPalette.getPixel( Vec2i( mColorIndex, 0 ) );
 			}
 			else // color change - restore brush
 			{
@@ -369,11 +372,11 @@ void IRPaint::setup()
 	mParams.addPersistentParam( "Splash duration", &mSplashDuration, 5.f, "min=1 max=30 step=.5" );
 
 	mParams.addText( "Brushes" );
-	mParams.addPersistentParam( "1st", &mBrushThickness[ 1 ], 10, "min=1 max=200" );
-	mParams.addPersistentParam( "2nd", &mBrushThickness[ 2 ], 20, "min=1 max=200" );
-	mParams.addPersistentParam( "3rd", &mBrushThickness[ 3 ], 30, "min=1 max=200" );
-	mParams.addPersistentParam( "4th", &mBrushThickness[ 4 ], 50, "min=1 max=200" );
-	mParams.addPersistentParam( "Eraser", &mBrushThickness[ 5 ], 80, "min=1 max=200" );
+	mParams.addPersistentParam( "1st", &mBrushThickness[ 0 ], 10, "min=1 max=200" );
+	mParams.addPersistentParam( "2nd", &mBrushThickness[ 1 ], 20, "min=1 max=200" );
+	mParams.addPersistentParam( "3rd", &mBrushThickness[ 2 ], 30, "min=1 max=200" );
+	mParams.addPersistentParam( "4th", &mBrushThickness[ 3 ], 50, "min=1 max=200" );
+	mParams.addPersistentParam( "Eraser", &mBrushThickness[ BRUSH_ERASER ], 80, "min=1 max=200" );
 	mParams.addText( "Debug" );
 	mParams.addParam( "Brush index", &mBrushIndex, "", true );
 	mParams.addParam( "Brush color", &mBrushColor, "", true );
@@ -449,6 +452,7 @@ void IRPaint::loadImages()
 	Surface areaStencilSurf = loadImage( loadResource( RES_AREA_STENCIL ) );
 	mAreaStencil = gl::Texture( areaStencilSurf );
 	mBrushesStencil = loadImage( loadResource( RES_BRUSHES_STENCIL ) );
+	mColorPalette = loadImage( loadResource( RES_COLOR_PALETTE ) );
 
 	mMapMapping = RectMapping( getWindowBounds(), mBrushesMap.getBounds() );
 
