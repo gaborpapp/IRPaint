@@ -104,6 +104,9 @@ class IRPaint : public AppBasic
 		Surface mColorsMap;
 		Surface mColorPalette; //<< list of colors
 
+		vector< gl::Texture > mBrushesGlow; //<< glow textures for the brushes
+		vector< gl::Texture > mColorsGlow; //<< glow textures for the colors
+
 		Area mDrawingArea; //<< bounding area of the drawing
 		gl::Fbo mDrawing;
 		void clearDrawing();
@@ -395,6 +398,8 @@ void IRPaint::setup()
 	mMixerShader.bind();
 	mMixerShader.uniform( "drawing", 0 );
 	mMixerShader.uniform( "stencil", 1 );
+	mMixerShader.uniform( "glow0", 2 );
+	mMixerShader.uniform( "glow1", 3 );
 	mMixerShader.unbind();
 
 	loadImages();
@@ -453,6 +458,23 @@ void IRPaint::loadImages()
 	mAreaStencil = gl::Texture( areaStencilSurf );
 	mBrushesStencil = loadImage( loadResource( RES_BRUSHES_STENCIL ) );
 	mColorPalette = loadImage( loadResource( RES_COLOR_PALETTE ) );
+
+	// brush glow textures
+	mBrushesGlow.push_back( loadImage( loadResource( RES_GLOW_BRUSH_0 ) ) );
+	mBrushesGlow.push_back( loadImage( loadResource( RES_GLOW_BRUSH_1 ) ) );
+	mBrushesGlow.push_back( loadImage( loadResource( RES_GLOW_BRUSH_2 ) ) );
+	mBrushesGlow.push_back( loadImage( loadResource( RES_GLOW_BRUSH_3 ) ) );
+	mBrushesGlow.push_back( loadImage( loadResource( RES_GLOW_ERASER ) ) );
+
+	// color glow textures
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_0 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_1 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_2 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_3 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_4 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_5 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_6 ) ) );
+	mColorsGlow.push_back( loadImage( loadResource( RES_GLOW_COLOR_7 ) ) );
 
 	mMapMapping = RectMapping( getWindowBounds(), mBrushesMap.getBounds() );
 
@@ -558,6 +580,8 @@ void IRPaint::draw()
 	mMixerShader.bind();
 	mDrawing.getTexture().bind();
 	mAreaStencil.bind( 1 );
+	mBrushesGlow[ mBrushIndex ].bind( 2 );
+	mColorsGlow[ mColorIndex ].bind( 3 );
 	gl::drawSolidRect( getWindowBounds() );
 	mMixerShader.unbind();
 
@@ -695,11 +719,11 @@ void IRPaint::keyDown( KeyEvent event )
 
 bool IRPaint::checkLicense()
 {
-	XmlTree doc = XmlTree( loadResource( LICENSE_XML ));
+	XmlTree doc = XmlTree( loadResource( RES_LICENSE_XML ));
 
 	mndl::license::License license;
 	license.init( doc );
-	license.setKey( loadResource( LICENSE_KEY ) );
+	license.setKey( loadResource( RES_LICENSE_KEY ) );
 
 	if ( !license.process() )
 	{

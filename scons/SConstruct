@@ -5,8 +5,8 @@ env['APP_SOURCES'] = ['IRPaint.cpp', 'AppUtils.mm', 'BlobTracker.cpp',
 		'CaptureParams.cpp', 'License.cpp', 'ManualCalibration.cpp',
 		'PParams.cpp', 'Stroke.cpp', 'TextureMenu.cpp', 'Triangle.cpp',
 		'Utils.cpp']
-env['RESOURCES'] = ['gfx/*.png', 'gfx/*.jpg', 'gfx/menu/*', 'license/*',
-	'shaders/*']
+env['RESOURCES'] = ['gfx/*.png', 'gfx/*.jpg', 'gfx/glow/*', 'gfx/menu/*',
+	'license/*', 'shaders/*']
 env['ICON'] = '../xcode/icon.icns'
 env['DEBUG'] = 0
 
