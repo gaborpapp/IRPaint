@@ -140,7 +140,7 @@ bool License::process()
 
 	values2String( value, data );
 	if( ! getKey().empty())
-		dataEncrypt = Crypter::rsaPublicEncryptDirect( getKey(), data );
+		dataEncrypt = Crypter::rsaPublicEncrypt( getKey(), data );
 	else
 		dataEncrypt = Crypter::rsaPublicEncrypt( getKeyPath(), data );
 
@@ -154,7 +154,7 @@ bool License::process()
 		if( ! ret.empty())
 		{
 			if( ! getKey().empty())
-				dataDecrypt = Crypter::rsaPublicDencryptDirect( getKey(), ret );
+				dataDecrypt = Crypter::rsaPublicDencrypt( getKey(), ret );
 			else
 				dataDecrypt = Crypter::rsaPublicDencrypt( getKeyPath(), ret );
 
