@@ -1,3 +1,5 @@
+#include <cstring>
+
 #include "cinder/app/AppBasic.h"
 #include "cinder/Xml.h"
 #include <boost/date_time/local_time/local_time.hpp>
@@ -68,6 +70,18 @@ const fs::path &License::getKeyPath() const
 
 void License::setKey( const std::string &publicKey )
 {
+	mPublicKey = publicKey;
+}
+
+void License::setKey( ci::DataSourceRef dataSource )
+{
+	Buffer buf = dataSource->getBuffer();
+	size_t dataSize = buf.getDataSize();
+	shared_ptr<char> bufString( new char[dataSize+1], checked_array_deleter<char>() );
+	memcpy( bufString.get(), buf.getData(), buf.getDataSize() );
+	bufString.get()[dataSize] = 0;
+	string publicKey( bufString.get() );
+
 	mPublicKey = publicKey;
 }
 

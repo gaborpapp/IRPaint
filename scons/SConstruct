@@ -2,14 +2,16 @@ env = Environment()
 
 env['APP_TARGET'] = 'IRPaint'
 env['APP_SOURCES'] = ['IRPaint.cpp', 'AppUtils.mm', 'BlobTracker.cpp',
-		'CaptureParams.cpp', 'ManualCalibration.cpp', 'PParams.cpp',
-		'Stroke.cpp', 'TextureMenu.cpp', 'Triangle.cpp', 'Utils.cpp']
-env['RESOURCES'] = ['gfx/*.png', 'gfx/*.jpg', 'gfx/menu/*', 'shaders/*']
+		'CaptureParams.cpp', 'License.cpp', 'ManualCalibration.cpp',
+		'PParams.cpp', 'Stroke.cpp', 'TextureMenu.cpp', 'Triangle.cpp',
+		'Utils.cpp']
+env['RESOURCES'] = ['gfx/*.png', 'gfx/*.jpg', 'gfx/menu/*', 'license/*',
+	'shaders/*']
 env['ICON'] = '../xcode/icon.icns'
 env['DEBUG'] = 0
 
-# OpenCV
-env = SConscript('../../../blocks/Cinder-OpenCV/scons/SConscript',
-	exports = 'env')
+env = SConscript('../../../blocks/Cinder-OpenCV/scons/SConscript', exports = 'env')
+env = SConscript('../../../blocks/Cinder-OpenSSL/scons/SConscript', exports = 'env')
+env = SConscript('../../../blocks/Cinder-Curl/scons/SConscript', exports = 'env')
 
 SConscript('../../../scons/SConscript', exports = 'env')
