@@ -339,7 +339,7 @@ void IRPaint::setup()
 	setIcon( IDI_ICON1 );
 #endif
 
-	if( ! checkLicense())
+	if ( !checkLicense() )
 	{
 		quit();
 	}
@@ -691,14 +691,13 @@ void IRPaint::keyDown( KeyEvent event )
 
 bool IRPaint::checkLicense()
 {
-	char *publicKey = (char*)loadResource( LICENSE_KEY )->getBuffer().getData();
-	XmlTree doc     = XmlTree( loadResource( LICENSE_XML ));
+	XmlTree doc = XmlTree( loadResource( LICENSE_XML ));
 
 	mndl::license::License license;
 	license.init( doc );
-	license.setKey( publicKey );
+	license.setKey( loadResource( LICENSE_KEY ) );
 
-	if( ! license.process())
+	if ( !license.process() )
 	{
 		mndl::app::showMessageBox( "License process failed!", "License problem" );
 		return false;
@@ -707,6 +706,5 @@ bool IRPaint::checkLicense()
 	return true;
 }
 
-//CINDER_APP_BASIC( IRPaint, RendererGl( RendererGl::AA_NONE ) )
-CINDER_APP_BASIC( IRPaint, RendererGl )
+CINDER_APP_BASIC( IRPaint, RendererGl( RendererGl::AA_NONE ) )
 

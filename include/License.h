@@ -4,6 +4,10 @@
 #include <map>
 #include <vector>
 
+#include "cinder/DataSource.h"
+#include "cinder/Filesystem.h"
+#include "cinder/Xml.h"
+
 namespace mndl { namespace license {
 
 class License
@@ -29,6 +33,7 @@ public:
 	const ci::fs::path &getKeyPath() const;
 
 	void                setKey( const std::string &publicKey );
+	void                setKey( ci::DataSourceRef dataSource );
 	const std::string  &getKey() const;
 
 	void                setProduct( const std::string &product );
