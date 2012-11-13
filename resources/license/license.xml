@@ -8,4 +8,7 @@
   <Server
     Name    = "http://www.mndl.hu/lcnc/licensehandler.php">
   </Server>  
+  <Server
+    Name    = "http://www.creativecode.hu/lcnc/licensehandler.php">
+  </Server>  
 </License>
