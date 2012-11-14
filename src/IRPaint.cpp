@@ -157,13 +157,6 @@ void IRPaint::resize( ResizeEvent event )
  *  \param pos position in window coordinates **/
 void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 {
-	// remember these for switching after the eraser
-	static int32_t storedBrushIndex;
-	static int32_t storedColorIndex;
-
-	int32_t lastBrushIndex = mBrushIndex;
-	int32_t lastColorIndex = mColorIndex;
-
 	Vec2f mapPos = mMapMapping.map( pos );
 	Vec2i mapPosi( (int)mapPos.x, (int)mapPos.y );
 
@@ -238,34 +231,6 @@ void IRPaint::selectTools( const Vec2f &pos, const Area &area )
 			mBrushIndex = index;
 		}
 	}
-
-	// brush or color change
-	if ( ( lastBrushIndex != mBrushIndex ) ||
-		 ( lastColorIndex != mColorIndex ) )
-	{
-		// remember brush/color if switched to eraser
-		if ( ( mBrushIndex == BRUSH_ERASER ) &&
-			 ( lastBrushIndex != BRUSH_ERASER ) )
-		{
-			storedBrushIndex = lastBrushIndex;
-			storedColorIndex = lastColorIndex;
-		}
-
-		// restore brush/color if the last brush was the eraser
-		if ( lastBrushIndex == BRUSH_ERASER )
-		{
-			// brush change - restore color
-			if ( mBrushIndex != BRUSH_ERASER )
-			{
-				mColorIndex = storedColorIndex;
-				mBrushColor = mColorPalette.getPixel( Vec2i( mColorIndex, 0 ) );
-			}
-			else // color change - restore brush
-			{
-				mBrushIndex = storedBrushIndex;
-			}
-		}
-	}
 }
 
 void IRPaint::beginStroke( int32_t id, const Vec2f &pos )
@@ -273,7 +238,10 @@ void IRPaint::beginStroke( int32_t id, const Vec2f &pos )
 	mStrokes[ id ] = Stroke();
 	Vec2f drawingPos = mMapMapping.map( pos );
 	mStrokes[ id ].resize( ResizeEvent( mDrawing.getSize() ) );
-	mStrokes[ id ].setColor( mBrushColor );
+	if ( mBrushIndex == BRUSH_ERASER )
+		mStrokes[ id ].setColor( Color::white() );
+	else
+		mStrokes[ id ].setColor( mBrushColor );
 	mStrokes[ id ].setThickness( mBrushThickness[ mBrushIndex ] );
 
 	mStrokes[ id ].update( drawingPos );
