@@ -45,8 +45,8 @@
   <ItemGroup>
     <ResourceCompile Include="IRPaintApp.rc" />
     <ResourceCompile Include="Resource.rc">
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;$(CINDER_DIR)\blocks\Cinder-Curl\src;$(CINDER_DIR)\blocks\Cinder-OpenSSL\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.;..\include;$(CINDER_DIR)\include;$(BOOST_DIR);$(CINDER_DIR)\src\AntTweakBar;$(CINDER_DIR)\blocks\Cinder-OpenCV\include;$(CINDER_DIR)\blocks\Cinder-Curl\src;$(CINDER_DIR)\blocks\Cinder-OpenSSL\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
