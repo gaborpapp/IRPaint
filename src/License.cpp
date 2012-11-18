@@ -241,13 +241,33 @@ void License::values2String( const Values &src, string &dst )
 
 string License::getTime()
 {
-	int time = 
-	boost::posix_time::second_clock::local_time().time_of_day().hours() * 10000 +
-	boost::posix_time::second_clock::local_time().time_of_day().minutes() * 100 +
-	boost::posix_time::second_clock::local_time().time_of_day().seconds();
+	int hour   = boost::posix_time::second_clock::local_time().time_of_day().hours();
+	int minute = boost::posix_time::second_clock::local_time().time_of_day().minutes();
+	int second = boost::posix_time::second_clock::local_time().time_of_day().seconds();
 
 	stringstream out;
-	out << time;
+
+	if( hour == 0 )
+		out << "00";
+	else if( hour < 10 )
+		out << "0" << hour;
+	else
+		out << hour;
+
+	if( minute == 0 )
+		out << "00";
+	else if( minute < 10 )
+		out << "0" << minute;
+	else
+		out << minute;
+
+	if( second == 0 )
+		out << "00";
+	else if( second < 10 )
+		out << "0" << second;
+	else
+		out << second;
+
 	return out.str();
 }
 
