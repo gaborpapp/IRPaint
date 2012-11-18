@@ -116,7 +116,7 @@ void BlobTracker::setupGui()
 
 	mParams.addPersistentParam( "Threshold", &mThreshold, 150, "min=0 max=255");
 	mParams.addPersistentParam( "Blur size", &mBlurSize, 10, "min=1 max=15" );
-	mParams.addPersistentParam( "Min area", &mMinArea, 0.001f, "min=0.0 max=1.0 step=0.001" );
+	mParams.addPersistentParam( "Min area", &mMinArea, 0.0001f, "min=0.0 max=1.0 step=0.0001" );
 	mParams.addPersistentParam( "Max area", &mMaxArea, 0.2f, "min=0.0 max=1.0 step=0.001" );
 
 	mParams.addSeparator();
