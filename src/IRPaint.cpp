@@ -311,6 +311,9 @@ void IRPaint::setup()
 {
 #if defined( CINDER_MSW )
 	setIcon( IDI_ICON1 );
+
+	
+	deleteFile( "./IRPaintApp!1.pgc" );
 #endif
 
 	if ( !checkLicense() )
