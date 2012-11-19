@@ -311,9 +311,6 @@ void IRPaint::setup()
 {
 #if defined( CINDER_MSW )
 	setIcon( IDI_ICON1 );
-
-	
-	deleteFile( "./IRPaintApp!1.pgc" );
 #endif
 
 	if ( !checkLicense() )
@@ -406,6 +403,10 @@ void IRPaint::setup()
 	showAllParams( false );
 }
 
+#ifdef CINDER_MSW
+// the first pragma turns off whatever optimizations were on (Microsoft compiler has a crash without it)
+#pragma optimize( "", off )
+#endif
 void IRPaint::clearDrawing()
 {
 	mDrawing.bindFramebuffer();
@@ -417,6 +418,10 @@ void IRPaint::clearDrawing()
 	// hide the menu
 	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
 }
+#ifdef CINDER_MSW
+#pragma optimize( "", on )
+// The second pragma restores optimizations to whatever state they had before (Microsoft compiler has a crash without it)
+#endif
 
 void IRPaint::loadImages()
 {
@@ -563,6 +568,10 @@ void IRPaint::draw()
 	params::PInterfaceGl::draw();
 }
 
+#ifdef CINDER_MSW
+// the first pragma turns off whatever optimizations were on (Microsoft compiler has a crash without it)
+#pragma optimize( "", off )
+#endif
 void IRPaint::saveScreenshot()
 {
 	// NOTE: slow because GPU->CPU copy
@@ -587,6 +596,10 @@ void IRPaint::saveScreenshot()
 	// hide the menu
 	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
 }
+#ifdef CINDER_MSW
+#pragma optimize( "", on )
+// The second pragma restores optimizations to whatever state they had before (Microsoft compiler has a crash without it)
+#endif
 
 void IRPaint::threadedScreenshot( Surface snapshot )
 {
