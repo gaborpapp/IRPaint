@@ -38,3 +38,6 @@
 #define RES_GLOW_COLOR_5 CINDER_RESOURCE( ../resources/, gfx/glow/color_5.png, 156, PNG )
 #define RES_GLOW_COLOR_6 CINDER_RESOURCE( ../resources/, gfx/glow/color_6.png, 157, PNG )
 #define RES_GLOW_COLOR_7 CINDER_RESOURCE( ../resources/, gfx/glow/color_7.png, 158, PNG )
+
+#define RES_PICTUREBLIT_FRAG CINDER_RESOURCE( ../resources/, shaders/PictureBlit.frag, 159, GLSL )
+

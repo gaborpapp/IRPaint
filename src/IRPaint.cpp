@@ -94,11 +94,13 @@ class IRPaint : public AppBasic
 
 		void selectTools( const Vec2f &pos, const Area &area );
 		gl::GlslProg mMixerShader;
+		gl::GlslProg mPictureBlitShader;
 
 		// textures, surfaces
 		gl::Texture mBackground;
 		gl::Texture mAreaStencil;
 		gl::Texture mSplashScreen;
+		gl::Texture mCanvasPicture; //<< custom background picture on canvas
 		Surface mBrushesMap;
 		Surface mBrushesStencil; //<< area of the brushes for more accurate brush selection
 		Surface mColorsMap;
@@ -113,6 +115,8 @@ class IRPaint : public AppBasic
 
 		void loadImages();
 		bool checkLicense();
+
+		void addPicture();
 
 		ColorA mBrushColor; //<< current brush color
 		int32_t mBrushIndex; //<< current brush index
@@ -239,7 +243,8 @@ void IRPaint::beginStroke( int32_t id, const Vec2f &pos )
 	Vec2f drawingPos = mMapMapping.map( pos );
 	mStrokes[ id ].resize( ResizeEvent( mDrawing.getSize() ) );
 	if ( mBrushIndex == BRUSH_ERASER )
-		mStrokes[ id ].setColor( Color::white() );
+		mStrokes[ id ].setColor( ColorA( 0, 0, 0, 0 ) );
+		//mStrokes[ id ].setColor( Color::white() );
 	else
 		mStrokes[ id ].setColor( mBrushColor );
 	mStrokes[ id ].setThickness( mBrushThickness[ mBrushIndex ] );
@@ -341,6 +346,10 @@ void IRPaint::setup()
 	mParams.addButton( "Reset", std::bind( &IRPaint::clearDrawing, this ), "key=SPACE" );
 	mParams.addButton( "Screenshot", std::bind( &IRPaint::saveScreenshot, this ), "key=w" );
 	mParams.addPersistentParam( "Splash duration", &mSplashDuration, 5.f, "min=1 max=30 step=.5" );
+	mParams.addSeparator();
+
+	mParams.addButton( "Add picture", std::bind( &IRPaint::addPicture, this ) );
+	mParams.addSeparator();
 
 	mParams.addText( "Brushes" );
 	mParams.addPersistentParam( "1st", &mBrushThickness[ 0 ], 10, "min=1 max=200" );
@@ -356,6 +365,8 @@ void IRPaint::setup()
 	{
 		mMixerShader = gl::GlslProg( loadResource( RES_PASSTHROUGH_VERT ),
 									 loadResource( RES_MIXER_FRAG ) );
+		mPictureBlitShader = gl::GlslProg( loadResource( RES_PASSTHROUGH_VERT ),
+										   loadResource( RES_PICTUREBLIT_FRAG ) );
 	}
 	catch ( const std::exception &exc )
 	{
@@ -369,6 +380,11 @@ void IRPaint::setup()
 	mMixerShader.uniform( "glow0", 2 );
 	mMixerShader.uniform( "glow1", 3 );
 	mMixerShader.unbind();
+
+	mPictureBlitShader.bind();
+	mPictureBlitShader.uniform( "drawing", 0 );
+	mPictureBlitShader.uniform( "stencil", 1 );
+	mPictureBlitShader.unbind();
 
 	loadImages();
 	setupMenu();
@@ -400,13 +416,25 @@ void IRPaint::setup()
 
 	setFrameRate( 60 );
 
+	setFullScreen( true );
 	showAllParams( false );
 }
 
 void IRPaint::clearDrawing()
 {
 	mDrawing.bindFramebuffer();
+	gl::setMatricesWindow( mDrawing.getSize(), false );
+	gl::setViewport( mDrawing.getBounds() );
+
 	gl::clear( ColorA( 1, 1, 1, 0 ) );
+	// draw picture to canvas to get proper blending with the strokes
+	if ( mCanvasPicture )
+	{
+		mCanvasPicture.enableAndBind();
+		gl::drawSolidRect( Rectf( mDrawingArea ).inflated( Vec2f( 1, 1 ) ) );
+		mCanvasPicture.unbind();
+		mCanvasPicture.disable();
+	}
 	mDrawing.unbindFramebuffer();
 
 	mStrokes.clear();
@@ -514,7 +542,7 @@ void IRPaint::draw()
 		gl::setViewport( getWindowBounds() );
 
 		Area outputArea = Area::proportionalFit( mSplashScreen.getBounds(),
-				getWindowBounds(), true );
+				getWindowBounds(), true, true );
 		gl::draw( mSplashScreen, outputArea );
 
 		return;
@@ -525,7 +553,10 @@ void IRPaint::draw()
 	gl::setMatricesWindow( mDrawing.getSize(), false );
 	gl::setViewport( mDrawing.getBounds() );
 
-	gl::enableAlphaBlending();
+	if ( mBrushIndex != BRUSH_ERASER )
+		gl::enableAlphaBlending();
+	else
+		gl::disableAlphaBlending(); // so we can draw with 0 opacity
 	for ( map< int32_t, Stroke >::iterator it = mStrokes.begin();
 			it != mStrokes.end(); ++it )
 	{
@@ -544,6 +575,21 @@ void IRPaint::draw()
 	gl::draw( mBackground, getWindowBounds() );
 
 	gl::enableAlphaBlending();
+
+	// draw picture on background, so erasing works
+	// FIXME: eraser stroke border blending
+	if ( mCanvasPicture )
+	{
+		RectMapping mapping( mDrawing.getBounds(), getWindowBounds() );
+		mPictureBlitShader.bind();
+		mPictureBlitShader.uniform( "size", Vec2f( getWindowSize() ) );
+		mCanvasPicture.enableAndBind();
+		mAreaStencil.bind( 1 );
+		gl::drawSolidRect( mapping.map( mDrawingArea ).inflated( Vec2f( 1, 1 ) ) );
+		mCanvasPicture.unbind();
+		mCanvasPicture.disable();
+		mPictureBlitShader.unbind();
+	}
 
 	gl::color( ColorA::white() );
 	mMixerShader.bind();
@@ -603,6 +649,27 @@ void IRPaint::threadedScreenshot( Surface snapshot )
     {
         console() << "unable to save image file " << pngPath << endl;
     }
+}
+
+void IRPaint::addPicture()
+{
+	fs::path filePath = getOpenFilePath();
+	if ( !filePath.empty() )
+	{
+		try
+		{
+			mCanvasPicture = gl::Texture( loadImage( filePath ) );
+		}
+		catch ( ... )
+		{
+			console() << "unable to load image file " << filePath << endl;
+		}
+	}
+	else
+	{
+		mCanvasPicture.reset();
+	}
+	clearDrawing();
 }
 
 // show/hide all bars except help, which is always hidden

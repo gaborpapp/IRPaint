@@ -12,5 +12,7 @@ void main()
 	vec4 drawingColor = texture2D( drawing, uv );
 	vec4 glowColor = texture2D( glow0, uv ) + texture2D( glow1, uv );
 	gl_FragColor = mix( glowColor, drawingColor, alpha );
+	if ( alpha > 0 )
+		gl_FragColor.a *= drawingColor.a;
 }
 
