@@ -403,10 +403,6 @@ void IRPaint::setup()
 	showAllParams( false );
 }
 
-#ifdef CINDER_MSW
-// the first pragma turns off whatever optimizations were on (Microsoft compiler has a crash without it)
-#pragma optimize( "", off )
-#endif
 void IRPaint::clearDrawing()
 {
 	mDrawing.bindFramebuffer();
@@ -416,12 +412,9 @@ void IRPaint::clearDrawing()
 	mStrokes.clear();
 
 	// hide the menu
-	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
+	std::function< void() > fn = std::bind( &mndl::gl::TextureMenu::hide, &mMenu );
+	timeline().add( fn, timeline().getCurrentTime() + 1 );
 }
-#ifdef CINDER_MSW
-#pragma optimize( "", on )
-// The second pragma restores optimizations to whatever state they had before (Microsoft compiler has a crash without it)
-#endif
 
 void IRPaint::loadImages()
 {
@@ -568,10 +561,6 @@ void IRPaint::draw()
 	params::PInterfaceGl::draw();
 }
 
-#ifdef CINDER_MSW
-// the first pragma turns off whatever optimizations were on (Microsoft compiler has a crash without it)
-#pragma optimize( "", off )
-#endif
 void IRPaint::saveScreenshot()
 {
 	// NOTE: slow because GPU->CPU copy
@@ -594,12 +583,9 @@ void IRPaint::saveScreenshot()
 	mScreenshotThread = thread( &IRPaint::threadedScreenshot, this, snapshot );
 
 	// hide the menu
-	timeline().add( std::bind( &mndl::gl::TextureMenu::hide, &mMenu ), timeline().getCurrentTime() + 1 );
+	std::function< void() > fn = std::bind( &mndl::gl::TextureMenu::hide, &mMenu );
+	timeline().add( fn, timeline().getCurrentTime() + 1 );
 }
-#ifdef CINDER_MSW
-#pragma optimize( "", on )
-// The second pragma restores optimizations to whatever state they had before (Microsoft compiler has a crash without it)
-#endif
 
 void IRPaint::threadedScreenshot( Surface snapshot )
 {
